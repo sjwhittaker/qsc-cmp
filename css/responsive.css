@@ -1,0 +1,99 @@
+/****************************************************************************
+ * Copyright (C) 2020, Sarah-Jane Whittaker (sarah@cs.queensu.ca)
+ *
+ * This program is free software: you can redistribute it and/or modify it 
+ * under the terms of the GNU Affero General Public License as published by 
+ * the Free Software Foundation, either version 3 of the License, or (at 
+ * your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License 
+ * along with this program in the file gnu-agpl-3.0.txt. If not, 
+ * see <https://www.gnu.org/licenses/>.
+ * 
+ * This program was developed with the input and support of the Queen's
+ * University School of Computing <https://www.cs.queensu.ca/>, Faculty
+ * of Arts and Science <https://www.queensu.ca/artsci/> and the Office of 
+ * the Vice-Provost (Teaching and Learning) 
+ * <https://www.queensu.ca/provost/teaching-and-learning>.
+ ***************************************************************************/
+
+/* Large devices (desktops, less than 1200px) */
+@media (max-width: 1199.98px) {
+
+}
+
+/* Medium devices (tablets, less than 992px) */
+@media (max-width: 991.98px) {
+
+    /* Header */
+    #program-title {
+        font-size: 1.5rem;
+        line-height: 1.25;
+        padding-bottom: 0.25rem;
+    }
+    
+    #header-logo {
+        height: 40px;
+        margin-left: -4px;
+        background-position: left top;
+    }
+}
+
+/* Small devices (landscape phones, less than 768px) */
+@media (max-width: 767.98px) {
+    /* Fonts */    
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h3, #program-title {
+        font-size: 1.375rem;
+    }
+    
+    h4 {
+        font-size: 1.25rem;
+    }
+
+    /* Footer */
+    #footer-branding {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        background-image: url('/sCLLOs/img/queens_triangles.png');
+        background-size: auto 100%;
+        background-position: right top;
+        background-repeat: no-repeat;           
+    }
+    
+    #footer-logo {
+        width: auto;
+        width: 500px;
+    }
+
+    #footer-logo + div {
+        width: auto;
+        margin-top: 1rem;
+        margin-left: 15px;          
+    }
+    
+    #arts-and-science-branding {
+        display: none;
+    }
+}
+
+/* Extra small devices (portrait phones, less than 576px) */
+@media (max-width: 575.98px) {
+
+
+}
+
+
+

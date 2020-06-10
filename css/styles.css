@@ -1,0 +1,535 @@
+/****************************************************************************
+ * Copyright (C) 2020, Sarah-Jane Whittaker (sarah@cs.queensu.ca)
+ *
+ * This program is free software: you can redistribute it and/or modify it 
+ * under the terms of the GNU Affero General Public License as published by 
+ * the Free Software Foundation, either version 3 of the License, or (at 
+ * your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License 
+ * along with this program in the file gnu-agpl-3.0.txt. If not, 
+ * see <https://www.gnu.org/licenses/>.
+ * 
+ * This program was developed with the input and support of the Queen's
+ * University School of Computing <https://www.cs.queensu.ca/>, Faculty
+ * of Arts and Science <https://www.queensu.ca/artsci/> and the Office of 
+ * the Vice-Provost (Teaching and Learning) 
+ * <https://www.queensu.ca/provost/teaching-and-learning>.
+ ***************************************************************************/
+
+/******************************************************************************/
+/* Colours */
+/* Yellow: #febe10 */
+/* Red: #b81137 */
+/* Purple: #622e88 */
+/* Blue: #11335d */
+/******************************************************************************/
+#content a {
+    color: var(--navy);
+}
+
+#content a:hover {
+    color: #072e5d;
+}
+
+body,
+#primary-navigation a:hover,
+#primary-navigation .dropdown-item:hover {
+    color: var(--dark);
+}
+
+.revision-none {
+    color: #242424;
+}
+
+header,
+header a,
+#header-branding a,
+#header-branding a:hover,
+#primary-navigation .dropdown-item,
+footer,
+.message.error,
+.message.success,
+.sub-plan-requirements .plan-title {
+    color: var(--light);
+}
+
+header,
+#primary-navigation .dropdown-menu,
+footer,
+.message.success {
+    background-color: var(--navy);
+}
+
+.message.warning {
+    background-color: var(--yellow);
+}
+
+.message.error {
+    background-color: var(--red);
+}
+
+body,
+header a:hover,
+#primary-navigation .dropdown-item:hover {
+    background-color: #fefefe;
+}
+
+#header-branding a {
+    background-color: transparent;
+}
+
+.custom-toggler.navbar-toggler {
+    border: 2px solid rgba(254,254,254,0.8);
+}
+
+#primary-navigation .dropdown-item:hover {
+    border-left: 1px dotted #11335d;
+    border-right: 1px dotted #11335d;
+}
+
+.tooltip-container .tooltip-popup {
+    background-color: #f2f2f2;
+    box-shadow: 1px 1px 1px 1px #bbb;
+}
+
+#content .link-button {
+    box-shadow: 1px 1px 1px 1px #ddd;    
+}
+
+#alignment-report .child-pllo,
+.search-results-inner {
+    background-color: #f2f2f2;
+    box-shadow: 1px 1px 1px 0 #ddd;
+}
+
+#course-pllo-matrix .support-row {
+    background-color: #f2f2f2;
+}
+
+.custom-toggler .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(254,254,254,1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 8h24M4 16h24M4 24h24'/%3E%3C/svg%3E");
+}
+
+
+/******************************************************************************/
+/* Fonts */
+/******************************************************************************/
+body {
+    font-family: var(--font-family-serif);
+}
+
+h1, h2, h3, h4, h5, h6, th, label, 
+input[type=button], input[type=submit], 
+.property-columns .property, 
+.tooltip-container .tooltip-popup .tooltip-popup-title,
+#content .link-button,
+.sub-plan-requirements .plan-title,
+.sub-plan-requirements-header {
+    font-family: var(--font-family-sans-serif);
+    font-weight: 500;
+}
+
+h1, h2, h3, h4, h5 {
+    margin-bottom: 0.5em;
+}
+
+h1 {
+    font-size: 2.5rem;
+}
+
+h2 {
+    font-size: 2.125rem;
+}
+
+h3, #header-branding {
+    font-size: 1.75rem;
+}
+
+h4 {
+    font-size: 1.375rem;
+}
+
+h5, .add-and-remove-buttons input[type=button]  {
+    font-size: 1.25rem;
+}
+
+h6, header, #alignment-report .child-pllo .pllo-text,
+.tooltip-container .tooltip-popup .tooltip-popup-title,
+#course-pllo-matrix .support-row td i {
+    font-size: 1.125rem;
+}
+
+p {
+    font-size: 1rem;
+}
+
+#content {
+    line-height: 1.25;
+}
+
+#content i.fas {
+    padding: 0 0.25em;
+}
+
+
+/******************************************************************************/
+/* Effects */
+/******************************************************************************/
+header a,
+header a:hover {
+    transition: color 0.5s;
+    transition: background-color 0.5s;
+}
+
+
+/******************************************************************************/
+/* General */
+/******************************************************************************/
+#content {
+    padding-top: 32px;
+    padding-bottom: 48px;
+}
+
+#content a {
+    font-weight: 500;
+    text-decoration: underline;
+}
+
+#content a:hover {
+    text-decoration: none;
+}
+
+img {
+    max-width: 100%;
+}
+
+h1 {
+    margin-top: 0.5em;
+}
+
+h2, h3, h4, h5, h6 {
+    margin-top: 1em;
+}
+
+table {
+    border-collapse: collapse;
+    margin: 16px 0;
+}
+
+th {
+    min-width: 150px;
+}
+
+th, td {
+    text-align: left;
+    padding: 0.75em 1.0em;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+}
+
+tr.indent td {
+    padding-left: calc(1.25em + 24px);
+}
+
+ul, ol, li {
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+}
+
+ul ul, ul ol, ol ul, ol ol {
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+}
+
+.print-only {
+    display: none;
+}
+
+
+/**********/
+/* Header */
+/**********/
+#header-branding {
+    padding: 1rem 1rem 0 1rem;
+}
+
+#header-logo {
+    height: 100%;
+}
+
+header .navbar {
+    padding: 0;
+}
+
+header .navbar button.navbar-toggler {
+    margin: 0.25rem 0 0.75rem 15px;
+}
+
+#primary-navigation > ul > li > a,
+#primary-navigation > div > a {
+    padding: 1rem;
+}
+
+#primary-navigation .dropdown-menu {
+    margin-top: 0;
+    border: 0 solid transparent;
+    border-top: 1px dotted #11335d;
+    border-radius: 0 0 0.15rem 0.15rem;
+}
+
+#primary-navigation .dropdown-item {
+    font-weight: normal;
+    background-color: transparent;
+}
+
+
+/**********/
+/* Footer */
+/**********/
+footer, #credits {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+#footer-logo {
+    max-height: 150px;
+}
+
+/*
+#credits .row .col-sm:nth-child(2) {
+    text-align: center;
+}
+*/
+
+#credits .row .col-sm:last-child {
+    text-align: right;
+}
+
+#credits img {
+    height: 85px;    
+}
+
+
+/*********/
+/* Forms */
+/*********/
+#cllo-type {
+    max-width: var(--breakpoint-sm);
+}
+
+
+/***********************/
+/* Information Columns */
+/***********************/
+.property-columns .row {
+    padding: 0.25em 0 0.75em 0;
+}
+
+.property-columns .property {
+    font-weight: bold;
+}
+
+.row + .property-columns {
+    margin-top: 2rem;
+}
+
+.property-columns + p {
+    margin-top: 2rem;
+}
+
+
+/********************/
+/* Alignment Report */
+/********************/
+#alignment-report .child-pllo {
+    padding: 1em 1em 1em calc(30px + 1em);
+    margin: 1em 0;
+}
+
+#alignment-report .child-pllo h3 {
+    margin-top: 0;
+}
+
+#alignment-report .child-pllo .pllo-text {
+    font-weight: bold;
+}
+
+
+/*********************/
+/* Course PLLO Matrix */
+/*********************/
+#course-pllo-matrix {
+    margin-top: 3rem;
+}
+
+#course-pllo-matrix th,
+#course-pllo-matrix .result,
+#course-pllo-matrix .support-row td {
+    text-align: center;
+}
+
+#course-pllo-matrix .support-row th {
+    text-align: left;
+}
+
+#course-pllo-matrix .support-row th,
+#course-pllo-matrix .support-row td {
+    padding: 1em;
+}
+
+
+/********************/
+/* Tooltips         */
+/********************/
+.tooltip-container {
+    position: relative;
+}
+
+.tooltip-container .tooltip-popup {
+    position: absolute;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.5s;
+
+    z-index: 99;
+    top: 50%;
+    left: calc(50% + 1em);
+    transform: translate(0, -50%);
+
+    padding: 1em;
+    border: 1px solid #fefefe;
+    min-width: 250px;
+
+    text-align: left;
+}
+
+.tooltip-container:hover .tooltip-popup {
+    visibility: visible;
+    opacity: 1;
+}
+
+.tooltip-container .tooltip-popup ul {
+    padding-left: 1em;
+}
+
+.tooltip-container .tooltip-popup .tooltip-popup-title {
+    font-weight: bold;
+}
+
+
+/**********/
+/* Search */
+/**********/
+.search-results-outer {
+    display: none;
+}
+
+.search-results-inner {
+    padding: 1rem;
+    margin: 0 0 1rem 0;
+    border-radius: 3px;
+    height: calc(100% - 1rem);
+}
+
+.search-results-inner h2 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+
+/************/
+/* Messages */
+/************/
+.message {
+    padding: 1rem;
+    border-radius: 3px;
+    margin-bottom: 1rem;
+}
+
+
+/*********************/
+/* Plan Requirements */
+/*********************/
+.plan-requirements {
+    margin-bottom: 32px;
+}
+
+.plan-requirements thead,
+.sub-plan-requirements-header {
+    background-color: var(--navy);
+    color: var(--light);    
+}
+
+.sub-plan-requirements-header {
+    padding: 0.75em 1em;
+    margin-bottom: 16px;
+}
+
+.sub-plan-requirements-header .title {
+    display: inline-block;
+    min-width: 150px;
+}
+
+.sub-plan-requirements .plan-title .name {
+    display: inline-block;
+    padding-right: 64px;
+}
+
+
+.sub-plan-requirements {
+    border: 4px solid var(--orange);
+    border-bottom-width: 8px;
+    margin: 0 0 16px 32px;    
+    padding: 0 16px 16px 16px;
+}
+
+.sub-plan-requirements .plan-title {
+    background-color: var(--orange);
+    margin: 0 -16px 16px -16px;
+    padding: 8px 16px;
+}
+
+#content .sub-plan-requirements .plan-title a {
+    color: var(--light);
+}
+
+
+/*****************/
+/* Miscellaneous */
+/*****************/
+li .ilo-description {
+    font-style: italic;
+    padding-bottom: 1.25em;
+}
+
+.revision-none {
+    font-style: italic;
+}
+
+h3.cross-referenced-course-name {
+    margin-top: 0.25em;
+}
+
+#content .link-button {
+    background-color: var(--navy);
+    color: var(--light);
+    display: inline-block;
+    padding: 0.5em 0.75em;
+    border-radius: 3px;
+}
+
+#content .link-button:hover {
+    color: var(--light);
+}
+
+table ul {
+    padding-left: 0;
+}
+

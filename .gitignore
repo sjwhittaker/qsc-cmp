@@ -1,0 +1,31 @@
+###########
+# Project #
+###########
+nbproject
+
+
+#######
+# CSS #
+#######
+css/fonts
+css/custom-styles.css
+
+
+##########
+# Images #
+##########
+img/custom/*
+
+
+######
+# JS #
+######
+js/config.js
+
+
+
+#######
+# PHP #
+#######
+config/config.php
+test.php

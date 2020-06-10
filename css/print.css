@@ -1,0 +1,105 @@
+/****************************************************************************
+ * Copyright (C) 2020, Sarah-Jane Whittaker (sarah@cs.queensu.ca)
+ *
+ * This program is free software: you can redistribute it and/or modify it 
+ * under the terms of the GNU Affero General Public License as published by 
+ * the Free Software Foundation, either version 3 of the License, or (at 
+ * your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License 
+ * along with this program in the file gnu-agpl-3.0.txt. If not, 
+ * see <https://www.gnu.org/licenses/>.
+ * 
+ * This program was developed with the input and support of the Queen's
+ * University School of Computing <https://www.cs.queensu.ca/>, Faculty
+ * of Arts and Science <https://www.queensu.ca/artsci/> and the Office of 
+ * the Vice-Provost (Teaching and Learning) 
+ * <https://www.queensu.ca/provost/teaching-and-learning>.
+ ***************************************************************************/
+
+@media print {
+    /* General */
+    .print-only {
+        display: block;
+    }
+    
+    .child-pllo-header {
+        page-break-inside: avoid;        
+    }
+
+    *, body {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+    
+    .container-fluid {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    
+    
+    /* Font Sizes */
+    h1, #header-branding-print {
+        font-size: 22px;
+    }
+    
+    h2 {
+        font-size: 20px;
+    }
+    
+    h3, #program-title {
+        font-size: 18px;
+    }
+    
+    h4 {
+        font-size: 16px;
+    }
+        
+    h5, input[type=button], h6, header,
+    #alignment-report .child-pllo .pllo-text {
+        font-size: 14px;
+    }
+    
+    body, p {
+        font-size: 12px;
+    }
+    
+    
+    /* Header */
+    #header-branding, header nav {
+        display: none;    
+    }
+    
+    #header-branding-print {
+        text-align: center;    
+    }
+    
+    
+    /* Content */
+    #content a, #content a:hover {
+        color: #121212;
+        text-decoration: none;
+    }
+    
+    
+    /* Footer */
+    footer, #credits {
+        display: none;    
+    }
+    
+    
+    /* Reports */
+    #course-pllo-matrix {
+        width: 100%;
+    }    
+    
+    #alignment-report .child-pllo {
+        padding-left: 1.5rem;
+        padding-right: 0;
+    }
+}

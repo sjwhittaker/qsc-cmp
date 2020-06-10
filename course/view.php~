@@ -1,0 +1,151 @@
+<?php
+include_once('../src/html.php');
+include_once('../src/core.php');
+
+include_once('../src/DatabaseObjects/DatabaseObject.php');
+include_once('../src/DatabaseObjects/Course.php');
+include_once('../src/DatabaseObjects/LearningOutcome.php');
+include_once('../src/DatabaseObjects/CourseLearningOutcome.php');
+include_once('../src/DatabaseObjects/ProgramLearningOutcome.php');
+include_once('../src/DatabaseObjects/InstitutionLearningOutcome.php');
+
+use Managers\SessionManager;
+use Managers\LearningOutcomesDatabase as LOD;
+
+use DatabaseObjects\Course;
+use DatabaseObjects\CourseLearningOutcome;
+use DatabaseObjects\ProgramLearningOutcome;
+use DatabaseObjects\InstitutionLearningOutcome;
+
+start_page_load();
+
+$db_outcomes = new LOD();
+
+$course_id = get_id_from_url();
+
+if ($course_id === false) :
+    start_html(array("START_HTML_TITLE" => "Error Displaying Course"));
+?>
+
+<h1>Error Displaying Course</h1>
+    <?php log_and_display_error("The course ID could not be extracted as an integer from the URL.");
+else:
+    $course_array = $db_outcomes->getCourseFromID($course_id);
+    if (empty($course_array)) :
+        start_html(array("START_HTML_TITLE" => "Error Finding Course"));  
+?>
+    
+<h1>Error Finding Course</h1>
+    <?php log_and_display_error("A course with that ID could not be retrieved from the database.");
+    else :
+        $course = Course::buildFromDBRow($course_array);
+
+        start_html(array("START_HTML_TITLE" => "View ".$course->getName()));
+        
+        // Get all of the CLOS for the course and extract the IDs
+        $all_clos_array = $db_outcomes->getCourseCLOs($course->getDBID());
+        $clo_id_array = extract_column_values_from_rows($all_clos_array, LOD::TABLE_CLO_ID);
+            
+        // Get all of the direct PLOs for the course and extract the IDs
+        $all_plos_array = $db_outcomes->getDirectPLOsFromCLOs($clo_id_array);
+
+        // Get all of the direct ILOs for the course and extract the IDs
+        $all_ilos_array = $db_outcomes->getDirectILOsFromCLOs($clo_id_array);
+?>
+
+<h1><?php echo $course->getName(); ?></h1>
+
+<p>The course calendar information will go here.</p>
+
+<h2>Course Learning Outcomes</h2>
+        <?php if (empty($all_clos_array)) : ?>
+    <p>There are no CLOs set for this course.</p>
+        <?php
+        else :
+        ?>
+    <table>
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Type</th>
+                <th>Text</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php  
+            foreach ($all_clos_array as $clo_array) :
+                $clo = CourseLearningOutcome::buildFromDBRow($clo_array);
+                $tr_tag = $clo->hasParent() ? 'tr class="indent"' : 'tr';
+            ?>
+            <<?php echo $tr_tag; ?>>
+                <td><a href="<?php echo $clo->getLinkToView(); ?>"><?php echo $clo->getName(); ?></a></td>
+                <td><?php echo $clo->getType(); ?></td>
+                <td><?php echo $clo->getText(); ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+        <?php endif; ?>
+        
+<h2>Program Learning Outcomes</h2>
+        <?php if (empty($all_plos_array)) : ?>
+    <p>There are no PLOs set for this course.</p>
+        <?php
+        else :
+        ?>
+    <table>
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Text</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php  
+            foreach ($all_plos_array as $plo_array) : 
+                $plo = ProgramLearningOutcome::buildFromDBRow($plo_array);
+            ?>
+            <tr>
+                <td><a href="<?php echo $plo->getLinkToView(); ?>"><?php echo $plo->getName(); ?></a></td>
+                <td><?php echo $plo->getText(); ?></td>            
+            </tr>
+            <?php endforeach; ?>            
+        </tbody>
+    </table>
+        <?php endif; ?>
+
+<h2>Institution Learning Outcomes</h2>
+        <?php if (empty($all_ilos_array)) : ?>
+    <p>There are no ILOs derived from the CLOs and PLOs for this course.</p>
+        <?php
+        else :
+        ?>
+    <table>
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Text</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php  
+            foreach ($all_ilos_array as $ilo_array) : 
+                $ilo = InstitutionLearningOutcome::buildFromDBRow($ilo_array);
+            ?>
+            <tr>
+                <td><a href="<?php echo $ilo->getLinkToView(); ?>"><?php echo $ilo->getName(); ?></a></td>
+                <td><?php echo $ilo->getText(); ?></td>            
+            </tr>
+            <?php endforeach; ?>            
+        </tbody>
+    </table>
+        <?php endif; ?>
+
+<?php
+    endif;
+endif;
+
+end_html();
+
+end_page_load();
+?>
