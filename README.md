@@ -94,7 +94,6 @@ You can create alternate versions of these classes and replace the originals via
 The opposite is true of `CourseCalendarDatabase` - it's short and easy to override. This gives you two options:
 - define and populate a course calendar database with the table in `tables/courses.sql` and use `CourseCalendarDatabase` as written; or,
 - create your own version of `CourseCalendarDatabase` that interacts with your institution's calendar system.
-Thanks to Dr. Doug Martin in the School of Computing for the `courses` table; it is included here with his permission.
 
 ### Database Connection Information
 The connection information for both database classes is collected using the return values from the following functions:
@@ -129,8 +128,10 @@ As you might expect, this software stores a fair amount of interconnected data:
 | Revision | |
 
 
-## Background
+## Background and Acknowledgments
 The **Q**ueen's **S**chool of **C**omputing's **C**urriculum **M**anagement **P**rogram (QSC-CMP) was initially created to document and review course and program learning outcomes in the [School of Computing](https://www.cs.queensu.ca/) at [Queen's University](https://www.queensu.ca/) in Kingston, Ontario, Canada.
+
+Thanks to Dr. Doug Martin in the School of Computing for the `courses` table; it is included here with his permission.
 
 The software was later extended under the direction of the [Faculty of Arts and Science](https://www.queensu.ca/artsci/) and the [Office of the Vice-Provost (Teaching and Learning)](https://www.queensu.ca/provost/teaching-and-learning/vice-provost-teaching-and-learning) to provide full plan/program support, including the definition and analysis of course-based requirements.
 
