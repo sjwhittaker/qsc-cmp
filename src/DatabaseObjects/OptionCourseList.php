@@ -39,12 +39,18 @@ class OptionCourseList extends CourseList {
      * 
      * @param type $dbCurriculum
      */
-    public function initialize($dbCurriculum, 
-        $level = CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
-        $orAbove = false) {        
+    public function initialize($dbCurriculum, $argArray = array()) {
+        // Prepare the default arguments
+        $argDefaultArray = array(
+            self::INITIALIZE_LEVEL => CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
+            self::INITIALIZE_OR_ABOVE => false);
+        
+        // Merge everything with priority on the arguments submitted
+        $argFinalArray = qsc_core_merge_arrays($argArray, $argDefaultArray);
+        
         // Set the level and 'or above' option
-        $this->level = $level;
-        $this->orAbove = $orAbove;
+        $this->level = $argFinalArray[self::INITIALIZE_LEVEL];
+        $this->orAbove = $argFinalArray[self::INITIALIZE_OR_ABOVE];
         
         // Get the courses that are directly associated with this list
         $this->childCourseArray = $dbCurriculum->getCoursesInCourseList(

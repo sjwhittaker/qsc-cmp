@@ -119,7 +119,7 @@ class CoursePlanRequirement extends PlanRequirement {
      * @return  The string text
      */
     public function getText($noneOption = null) {
-       return self::getNoneIfEmpty($this->text, $noneOption);   
+       return qsc_core_get_none_if_empty($this->text, $noneOption);   
     }     
 
 

@@ -157,7 +157,7 @@ class Plan extends CalendarComponent {
      * 
      * @param type $dbCurriculum
      */
-    public function initialize($dbCurriculum) {
+    public function initialize($dbCurriculum, $argArray = array()) {
         // Get child plans (if any)
         $this->subPlanArray = $dbCurriculum->getSubPlans($this->getDBID());        
     }
@@ -196,7 +196,7 @@ class Plan extends CalendarComponent {
      * @return type
      */ 
     public function getPriorTo($noneOption = null) {
-       return self::getNoneIfEmpty($this->prior_to, $noneOption);   
+       return qsc_core_get_none_if_empty($this->prior_to, $noneOption);   
     }    
     
     /** 
@@ -205,7 +205,7 @@ class Plan extends CalendarComponent {
      * @return type
      */
     public function getText($noneOption = null) {
-       return self::getNoneIfEmpty($this->text, $noneOption);   
+       return qsc_core_get_none_if_empty($this->text, $noneOption);   
     } 
 
     /** 
@@ -214,7 +214,7 @@ class Plan extends CalendarComponent {
      * @return type
      */
     public function getNotes($noneOption = null) {
-        return self::getNoneIfEmpty($this->notes, $noneOption);   
+        return qsc_core_get_none_if_empty($this->notes, $noneOption);   
     }
     
     /**

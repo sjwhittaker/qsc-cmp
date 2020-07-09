@@ -114,7 +114,7 @@ class Program extends CalendarComponent {
      * 
      * @param type $dbCurriculum
      */
-    public function initialize($dbCurriculum) {
+    public function initialize($dbCurriculum, $argArray = array()) {
         $this->degree = $dbCurriculum->getDegreeForProgram($this->getDBID());
         $this->plan = $dbCurriculum->getPlanForProgram($this->getDBID());
         
@@ -178,7 +178,7 @@ class Program extends CalendarComponent {
      * @return type
      */
     public function getName($noneOption = null) {
-       return self::getNoneIfEmpty($this->name, $noneOption);   
+       return qsc_core_get_none_if_empty($this->name, $noneOption);   
     }
 
     /**
@@ -187,7 +187,7 @@ class Program extends CalendarComponent {
      * @return type
      */
     public function getType($noneOption = null) {
-       return self::getNoneIfEmpty($this->type, $noneOption);   
+       return qsc_core_get_none_if_empty($this->type, $noneOption);   
     }
 
     /**
@@ -196,7 +196,7 @@ class Program extends CalendarComponent {
      * @return type
      */
     public function getCode($noneOption = null) {
-       return self::getNoneIfEmpty($this->code, $noneOption);   
+       return qsc_core_get_none_if_empty($this->code, $noneOption);   
     }
     
     /** 
@@ -206,7 +206,7 @@ class Program extends CalendarComponent {
      * @return  The string text
      */ 
     public function getText($noneOption = null) {
-       return self::getNoneIfEmpty($this->text, $noneOption);   
+       return qsc_core_get_none_if_empty($this->text, $noneOption);   
     } 
 
     /** 
@@ -216,7 +216,7 @@ class Program extends CalendarComponent {
      * @return  The string notes
      */ 
     public function getNotes($noneOption = null) {
-       return self::getNoneIfEmpty($this->notes, $noneOption);   
+       return qsc_core_get_none_if_empty($this->notes, $noneOption);   
     }    
     
     /**

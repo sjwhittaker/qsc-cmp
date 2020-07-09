@@ -31,6 +31,13 @@ use Managers\CourseCalendarDatabase as CCD;
 
 
 abstract class CourseList extends DatabaseObject {
+    /**************************************************************************
+     * Constants
+     **************************************************************************/
+    public const INITIALIZE_LEVEL = 'INITIALIZE_LEVEL';
+    public const INITIALIZE_OR_ABOVE = 'INITIALIZE_OR_ABOVE';
+    
+    
     /*************************************************************************
      * Static Functions
      ************************************************************************/
@@ -133,13 +140,6 @@ abstract class CourseList extends DatabaseObject {
     protected $orAbove = false;
        
     
-    /**************************************************************************
-     * Abstract Methods
-     **************************************************************************/
-    abstract public function initialize($dbCurriculum, 
-        $level = CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
-        $orAbove = false);
-
 
     /**************************************************************************
      * Constructor
@@ -196,7 +196,7 @@ abstract class CourseList extends DatabaseObject {
      * @return  The string name
      */ 
     public function getName($noneOption = null) {
-        return self::getNoneIfEmpty($this->name, $noneOption);           
+        return qsc_core_get_none_if_empty($this->name, $noneOption);           
     }
         
     /** 
@@ -206,7 +206,7 @@ abstract class CourseList extends DatabaseObject {
      * @return  The string notes
      */ 
     public function getNotes($noneOption = null) {
-        return self::getNoneIfEmpty($this->notes, $noneOption);   
+        return qsc_core_get_none_if_empty($this->notes, $noneOption);   
     }
     
     /** 
@@ -216,7 +216,7 @@ abstract class CourseList extends DatabaseObject {
      * @return  The string containing HTML
      */ 
     public function getHTML($noneOption = null) {
-        return self::getNoneIfEmpty($this->html, $noneOption);           
+        return qsc_core_get_none_if_empty($this->html, $noneOption);           
     }        
     
     /**
@@ -241,7 +241,7 @@ abstract class CourseList extends DatabaseObject {
      * @return  The string level
      */ 
     public function getLevel($noneOption = null) {
-        return self::getNoneIfEmpty($this->level, $noneOption);           
+        return qsc_core_get_none_if_empty($this->level, $noneOption);           
     }
     
     /** 

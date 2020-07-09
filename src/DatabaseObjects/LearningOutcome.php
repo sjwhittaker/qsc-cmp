@@ -103,7 +103,7 @@ abstract class LearningOutcome extends DatabaseObject {
      * @return  The string notes
      */
     public function getNotes($noneOption = null) {
-        return self::getNoneIfEmpty($this->notes, $noneOption);   
+        return qsc_core_get_none_if_empty($this->notes, $noneOption);   
     } 
      
     /** 

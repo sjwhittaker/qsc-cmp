@@ -92,7 +92,7 @@ class InstitutionLearningOutcome extends LearningOutcome {
      * @return  The string type
      */ 
     public function getDescription($noneOption = null) {
-        return self::getNoneIfEmpty($this->description, $noneOption);   
+        return qsc_core_get_none_if_empty($this->description, $noneOption);   
     } 
           
     /** 

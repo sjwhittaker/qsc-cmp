@@ -45,14 +45,12 @@ class RelationshipCourseList extends CourseList {
      *************************************************************************/
     /**
      * Initializes the member variables that can't be set by a single DB row.
-     * NOTE: Relationship lists don't have levels; the latter two 
-     * parameters are ignored.
+     * NOTE: Relationship lists don't have levels; the additional arguments
+     * are ignored.
      * 
      * @param type $dbCurriculum
      */
-    public function initialize($dbCurriculum, 
-        $level = CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
-        $orAbove = false) {
+    public function initialize($dbCurriculum, $argArray = array()) {
         $listName = $this->name;
         $listHTML = $this->html;
 

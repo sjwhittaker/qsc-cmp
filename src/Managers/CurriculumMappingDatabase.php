@@ -1260,7 +1260,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
         }
         
         $courseList = CourseList::buildFromDBRow($queryResult);
-        $courseList->initialize($this, $queryResult[$cacLevel], $queryResult[$cacOrAbove]);
+        $courseList->initialize($this, 
+            array(CourseList::INITIALIZE_LEVEL => $queryResult[$cacLevel], 
+                CourseList::INITIALIZE_OR_ABOVE => $queryResult[$cacOrAbove])
+        );
         return $courseList;
     }    
     
@@ -1319,7 +1322,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $courseListArray = array();
         foreach ($queryResultArray as $queryResult) {
             $courseList = CourseList::buildFromDBRow($queryResult);
-            $courseList->initialize($this, $queryResult[$cacLevel], $queryResult[$cacOrAbove]);
+            $courseList->initialize($this, 
+                array(CourseList::INITIALIZE_LEVEL => $queryResult[$cacLevel], 
+                    CourseList::INITIALIZE_OR_ABOVE => $queryResult[$cacOrAbove])
+            );
             $courseListArray[] = $courseList;
         }
         
@@ -1667,7 +1673,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
         }
         
         $courseList = CourseList::buildFromDBRow($row);
-        $courseList->initialize($this, $levelValue, $orAboveValue);
+        $courseList->initialize($this,
+            array(CourseList::INITIALIZE_LEVEL => $levelValue, 
+                CourseList::INITIALIZE_OR_ABOVE => $orAboveValue)
+        );
         return $courseList;
     }     
     

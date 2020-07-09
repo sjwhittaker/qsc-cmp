@@ -145,7 +145,7 @@ class CourseLevelLearningOutcome extends LearningOutcome {
      * @return  The string indicator of achievement
      */
     public function getIOA($noneOption = null) {
-        return self::getNoneIfEmpty($this->ioa, $noneOption);
+        return qsc_core_get_none_if_empty($this->ioa, $noneOption);
     }
 
     /**

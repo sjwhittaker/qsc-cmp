@@ -89,6 +89,7 @@ class CalendarCourse extends DatabaseObject {
     protected $equivalency = null;
     protected $website = null;
 
+    
     /**************************************************************************
      * Constructor
      **************************************************************************/
@@ -132,6 +133,7 @@ class CalendarCourse extends DatabaseObject {
         }
     }
 
+    
     /**************************************************************************
      * Get and Set Methods
      **************************************************************************/
@@ -169,7 +171,7 @@ class CalendarCourse extends DatabaseObject {
      * @return              The string prerequisites
      */ 
     public function getPrerequisites($noneOption = null) {
-        return self::getNoneIfEmpty($this->prereq, $noneOption);   
+        return qsc_core_get_none_if_empty($this->prereq, $noneOption);   
     }      
 
     /** 
@@ -179,7 +181,7 @@ class CalendarCourse extends DatabaseObject {
      * @return              The string corequisites
      */ 
     public function getCorequisites($noneOption = null) {
-        return self::getNoneIfEmpty($this->coreq, $noneOption);   
+        return qsc_core_get_none_if_empty($this->coreq, $noneOption);   
     } 
      
     /** 
@@ -189,7 +191,7 @@ class CalendarCourse extends DatabaseObject {
      * @return              The string notes
      */ 
     public function getNote($noneOption = null) {
-        return self::getNoneIfEmpty($this->note, $noneOption);   
+        return qsc_core_get_none_if_empty($this->note, $noneOption);   
     }
      
     /** 
@@ -199,7 +201,7 @@ class CalendarCourse extends DatabaseObject {
      * @return              The string exclusions
      */ 
     public function getExclusions($noneOption = null) {
-        return self::getNoneIfEmpty($this->exclusion, $noneOption);   
+        return qsc_core_get_none_if_empty($this->exclusion, $noneOption);   
     }       
      
     /** 
@@ -209,7 +211,7 @@ class CalendarCourse extends DatabaseObject {
      * @return              The string recommendation
      */ 
     public function getRecommendation($noneOption = null) {
-        return self::getNoneIfEmpty($this->reccomend, $noneOption);   
+        return qsc_core_get_none_if_empty($this->reccomend, $noneOption);   
     }       
 
     /** 
@@ -219,7 +221,7 @@ class CalendarCourse extends DatabaseObject {
      * @return              The string one-way exclusions
      */ 
     public function getOneWayExclusion($noneOption = null) {
-        return self::getNoneIfEmpty($this->oneWay, $noneOption);   
+        return qsc_core_get_none_if_empty($this->oneWay, $noneOption);   
     }       
 
     /** 
@@ -239,7 +241,7 @@ class CalendarCourse extends DatabaseObject {
      * @return              The string equivalency
      */ 
     public function getEquivalency($noneOption = null) {
-        return self::getNoneIfEmpty($this->equivalency, $noneOption);   
+        return qsc_core_get_none_if_empty($this->equivalency, $noneOption);   
     }    
      
     /** 
@@ -249,7 +251,7 @@ class CalendarCourse extends DatabaseObject {
      * @return              The string website
      */ 
     public function getWebsite($noneOption = null) {
-        return self::getNoneIfEmpty($this->website, $noneOption);   
+        return qsc_core_get_none_if_empty($this->website, $noneOption);   
     }      
      
 }
