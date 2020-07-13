@@ -31,13 +31,6 @@ use Managers\CourseCalendarDatabase as CCD;
 
 
 abstract class CourseList extends DatabaseObject {
-    /**************************************************************************
-     * Constants
-     **************************************************************************/
-    public const INITIALIZE_LEVEL = 'INITIALIZE_LEVEL';
-    public const INITIALIZE_OR_ABOVE = 'INITIALIZE_OR_ABOVE';
-    
-    
     /*************************************************************************
      * Static Functions
      ************************************************************************/
@@ -78,21 +71,14 @@ abstract class CourseList extends DatabaseObject {
     
     /**
      * 
-     * @param type $courseListArray
-     * @param type $dbCurriculum
+     * @return type
      */
-    public static function initializeAndSort(&$courseListArray, $dbCurriculum) {
-        foreach ($courseListArray as $courseList) {
-            $courseList->initialize($dbCurriculum);
-        }
-        
-        usort($courseListArray, 
-            function($a, $b) { 
-                return strcmp($a->getName(), $b->getName());            
-            }
-        );
-    }
-
+    public static function getSortFunction() {
+        return function($a, $b) { 
+                return strcmp($a->getName(), $b->getName());
+            };        
+    }     
+    
     /**
      * Returns all course subsets with units in the range 
      * [$units, $units + QSC_CMP_COURSELIST_MAXIMUM_ADDITIONAL_UNITS]

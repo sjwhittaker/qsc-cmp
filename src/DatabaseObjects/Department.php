@@ -47,8 +47,8 @@ class Department extends CalendarComponent {
 
         return new Department($id, $name);
     }
-    
 
+   
     /*************************************************************************
      * Constructor
      *************************************************************************/

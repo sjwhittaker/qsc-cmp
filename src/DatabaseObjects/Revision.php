@@ -65,6 +65,16 @@ class Revision extends DatabaseObject {
 
         return new Revision($id, $userID, $revTable, $revColumn, $primaryKey, $action, $priorValue, $dateAndTime);
     }
+    
+    /**
+     * 
+     * @return type
+     */
+    public static function getSortFunction() {
+        return function($a, $b) { 
+                return (strtotime($a->getDateAndTime()) > strtotime($b->getDateAndTime()));
+            };        
+    }     
 
     
     /************************************************************************

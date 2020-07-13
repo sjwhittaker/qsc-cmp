@@ -52,24 +52,7 @@ class Program extends CalendarComponent {
 
         return new Program($id, $name, $type, $code, $text, $notes);
     }
-    
-    /**
-     * 
-     * @param type $programArray
-     * @param type $dbCurriculum
-     */
-    public static function initializeAndSort(&$programArray, $dbCurriculum) {
-        foreach ($programArray as $program) {
-            $program->initialize($dbCurriculum);
-        }
-        
-        usort($programArray, 
-            function($a, $b) { 
-                return strcmp($a->getName(), $b->getName());            
-            }
-        );
-    }
-    
+       
 
     /*************************************************************************
      * Member Variables

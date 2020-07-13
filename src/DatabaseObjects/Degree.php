@@ -50,8 +50,8 @@ class Degree extends CalendarComponent {
 
         return new Degree($id, $name, $code, $type, $honours);
     }
+        
     
-
     /*************************************************************************
      * Member Variables
      *************************************************************************/

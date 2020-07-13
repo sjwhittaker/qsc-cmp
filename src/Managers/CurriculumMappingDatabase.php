@@ -360,37 +360,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
 
     /**************************************************************************
      * Static Functions
-     **************************************************************************/
-    /**
-     * 
-     * @param type $rowArray
-     * @param type $column
-     * @return type
-     */
-    public static function extractValueFromDBRows($rowArray, $column) {
-        $valueArray = array();
-        foreach ($rowArray as $row) {
-            $valueArray[] = $row[$column];
-        }
-
-        return $valueArray;
-    }
-
-    /**
-     * 
-     * @param type $rowArray
-     * @param type $objectType
-     * @return type
-     */
-    public static function buildFromDBRows($rowArray, $objectType) {
-        $objectArray = array();
-        foreach ($rowArray as $row) {
-            $objectArray[] = call_user_func('\\DatabaseObjects\\'.$objectType."::buildFromDBRow", $row);
-        }
-
-        return $objectArray;
-    }
-    
+     **************************************************************************/    
     /**
      * 
      * @return type
@@ -586,7 +556,80 @@ class CurriculumMappingDatabase extends DatabaseManager {
     protected function getDatabasePassword() {
         return qsc_cmp_get_cmd_database_password();
     }
+    
+    
+    /**************************************************************************
+     * Creating Objects
+     **************************************************************************/    
+    /**    
+     * 
+     * @param type $dbRow
+     * @param type $objectType
+     * @return type
+     */
+    public function createObjectFromDatabaseRow($dbRow, $objectType,
+        $initializeArgArray = array()) {
+        // Check to make sure the row isn't null or empty before trying to 
+        // create an object
+        if (! $dbRow) {
+            return null;
+        }
+        
+        // Create the 'core' of the object from the row
+        $dbObject = call_user_func('\\DatabaseObjects\\'.$objectType."::buildFromDBRow", $dbRow);
+        if (! $dbObject) {
+            return null;
+        }
+        
+        // Check the arguments to pass into the initialization array; is there
+        // anything in the database row that would override it?
+        $initializeFinalArgArray = $initializeArgArray;
+        foreach ($initializeFinalArgArray as $key => $value) {
+            if (array_key_exists($key, $dbRow)) {
+                $initializeFinalArgArray[$key] = $dbRow[$key];
+            }
+        }
+                
+        // Initialize the object; if no arguments are given, allow the
+        // specific implementation to handle them
+        if (empty($initializeFinalArgArray)) {
+            $dbObject->initialize($this);
+        }
+        else {
+            $dbObject->initialize($this, $initializeFinalArgArray);            
+        }
+        return $dbObject;
+    }
+    
+    /**
+     * 
+     * @param type $rowArray
+     * @param type $objectType
+     * @return type
+     */
+    public function createObjectsFromDatabaseRows($dbRowArray, $objectType,
+        $initializeDefaultArgArray = array()) {       
+        // Check to make sure the row isn't null or empty before trying to 
+        // create an object
+        if (! $dbRowArray) {
+            return array();
+        }        
 
+        $dbObjectArray = array();
+        
+        foreach ($dbRowArray as $dbRow) {
+            $dbObjectArray[] = $this->createObjectFromDatabaseRow($dbRow, 
+                $objectType, $initializeDefaultArgArray);
+        }
+        
+        if (! empty($dbObjectArray)) {
+            usort($dbObjectArray, 
+                call_user_func('\\DatabaseObjects\\'.$objectType."::getSortFunction"));
+        }
+
+        return $dbObjectArray;
+    }
+    
 
     /**************************************************************************
      * Courses and Subjects
@@ -602,8 +645,8 @@ class CurriculumMappingDatabase extends DatabaseManager {
 
         $query = "SELECT DISTINCT $subject FROM $course ORDER BY $subject ASC";
         return self::extractValueFromDBRows(
-                $this->getQueryResults($query), 
-                self::TABLE_COURSE_SUBJECT);
+            $this->getQueryResults($query), 
+            self::TABLE_COURSE_SUBJECT);
     }
     
     /**
@@ -638,7 +681,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $dasSubject = self::TABLE_DEPARTMENT_AND_SUBJECT_SUBJECT;
         
         $query = "SELECT $department.* FROM $department JOIN (SELECT * FROM $das WHERE $das.$dasSubject = ?) AS $das ON $department.$departmentID = $das.$dasDepartmentID ORDER BY $department.$departmentName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array("$subjectValue")),
             'Department');                
     }
@@ -666,10 +709,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
         }        
         $query .= " ORDER BY $subject, $number ASC";
 
-        $courseEntryArray = self::buildFromDBRows(
+        $courseEntryArray = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($subjectValue)), 
             'CourseEntry');
-        return Course::createArrayFromCourseEntries($courseEntryArray);
+        return Course::buildCoursesFromCourseEntries($courseEntryArray);
     }
         
     /**
@@ -688,10 +731,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $dasSubject = self::TABLE_DEPARTMENT_AND_SUBJECT_SUBJECT;
         
         $query = "SELECT $course.* FROM $course JOIN (SELECT * FROM $das WHERE $das.$dasDepartmentID = ?) AS $das ON $course.$courseSubject = $das.$dasSubject ORDER BY $course.$courseSubject, $course.$courseNumber ASC";
-        $courseEntryArray = self::buildFromDBRows(
+        $courseEntryArray = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($departmentIDValue)), 
             'CourseEntry');
-        return Course::createArrayFromCourseEntries($courseEntryArray);     
+        return Course::buildCoursesFromCourseEntries($courseEntryArray);     
     }    
     
     
@@ -713,7 +756,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $dafFacultyID = self::TABLE_DEGREE_AND_FACULTY_FACULTY_ID;
         
         $query = "SELECT $faculty.* FROM $faculty JOIN (SELECT * FROM $daf WHERE $daf.$dafDegreeID = ?) AS $daf ON $faculty.$facultyID = $daf.$dafFacultyID ORDER BY $faculty.$facultyName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($degreeIDValue)), 
             'Faculty');
     }
@@ -733,7 +776,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $dafFacultyID = self::TABLE_DEGREE_AND_FACULTY_FACULTY_ID;
         
         $query = "SELECT $degree.* FROM $degree JOIN (SELECT * FROM $daf WHERE $daf.$dafFacultyID = ?) AS $daf ON $degree.$degreeID = $daf.$dafDegreeID ORDER BY $degree.$degreeName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($facultyIDValue)), 
             'Degree');
     }
@@ -757,12 +800,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $padProgramID = self::TABLE_PROGRAM_AND_DEGREE_PROGRAM_ID;
         
         $query = "SELECT $program.* FROM $pad JOIN (SELECT * FROM $daf WHERE $daf.$dafFacultyID = ?) AS $daf ON $pad.$padDegreeID = $daf.$dafDegreeID JOIN $program ON $program.$programID = $pad.$padProgramID ORDER BY $program.$programName ASC";
-        $programArray = self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($facultyIDValue)), 
             'Program');
-        Program::initializeAndSort($programArray, $this);
-        
-        return $programArray;
     }
 
     /**
@@ -782,12 +822,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pap WHERE $pap.$papProgramID = ?) AS $pap ON $pap.$papPlanID = $plan.$planID ORDER BY $plan.$planName ASC";
         $resultRow = $this->getQueryResult($query, array($programIDValue));
         
-        $resultPlan = Plan::buildFromDBRow($resultRow);
-        if ($resultPlan) {
-            $resultPlan->initialize($this);
-        }
-        
-        return $resultPlan;  
+        return $this->createObjectFromDatabaseRow($resultRow, 'Plan');
     }
     
     /**
@@ -805,11 +840,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
         
         $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pap WHERE $pap.$papPLLOID = ?) AS $pap ON $pap.$papPlanID = $plan.$planID ORDER BY $plan.$planName ASC";
-        $resultPlans = self::buildFromDBRows(
+        $resultPlans = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($plloIDValue)), 
             'Plan');
         
-        qsc_core_map_member_function($resultPlans, 'initialize', array($this));
         return $resultPlans;        
     }
     
@@ -831,11 +865,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $dapRole = self::TABLE_DEPARTMENT_AND_PLAN_ROLE;
         
         $query = "SELECT $plan.* FROM (SELECT * FROM $plan WHERE $planType <> '$planTypeSubPlan') AS $plan JOIN (SELECT * FROM $dap WHERE $dap.$dapDepartmentID = ?) AS $dap ON $dap.$dapPlanID = $plan.$planID ORDER BY $dap.$dapRole, $plan.$planName ASC";
-        $resultPlans = self::buildFromDBRows(
+        $resultPlans = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($departmentIDValue)), 
             'Plan');
         
-        qsc_core_map_member_function($resultPlans, 'initialize', array($this));
         return $resultPlans;
     }
     
@@ -855,7 +888,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $padProgramID = self::TABLE_PROGRAM_AND_DEGREE_PROGRAM_ID;
         
         $query = "SELECT $degree.* FROM $degree JOIN (SELECT * FROM $pad WHERE $pad.$padProgramID = ?) AS $pad ON $pad.$padDegreeID = $degree.$degreeID ORDER BY $degree.$degreeName ASC";
-        return Degree::buildFromDBRow($this->getQueryResult($query, array($programIDValue)));
+        return $this->createObjectFromDatabaseRow(
+            $this->getQueryResult($query, array($programIDValue)),
+            'Degree');
     }
     
     /**
@@ -877,12 +912,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $padProgramID = self::TABLE_PROGRAM_AND_DEGREE_PROGRAM_ID;
         
         $query = "SELECT $program.* FROM $program JOIN (SELECT * FROM $pad WHERE $pad.$padDegreeID = ?) AS $pad ON $program.$programID = $pad.$padProgramID ORDER BY $program.$programName ASC";
-        $programArray = self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($degreeIDValue)), 
             'Program');
-        Program::initializeAndSort($programArray, $this);
-        
-        return $programArray;
     }
     
     /**
@@ -904,12 +936,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $papProgramID = self::TABLE_PROGRAM_AND_PLAN_PROGRAM_ID;
         
         $query = "SELECT $program.* FROM $program JOIN (SELECT * FROM $pap WHERE $pap.$papPlanID = ?) AS $pap ON $program.$programID = $pap.$papProgramID ORDER BY $program.$programName ASC";
-        $programArray = self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($planIDValue)), 
             'Program');
-        Program::initializeAndSort($programArray, $this);
-        
-        return $programArray;
     }
     
     /**
@@ -928,7 +957,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $departmentName = self::TABLE_DEPARTMENT_NAME;
         
         $query = "SELECT $department.* FROM $department JOIN (SELECT * FROM $dap WHERE $dap.$dapPlanID = ?) AS $dap ON $dap.$dapDepartmentID = $department.$departmentID ORDER BY $dap.$dapRole, $department.$departmentName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($planIDValue)), 
             'Department');
     }
@@ -950,7 +979,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $departmentName = self::TABLE_DEPARTMENT_NAME;
         
         $query = "SELECT $department.* FROM $department JOIN (SELECT * FROM $dap WHERE $dap.$dapPlanID = ? AND $dap.$dapRole = '$dapRoleAdministrator') AS $dap ON $dap.$dapDepartmentID = $department.$departmentID ORDER BY $dap.$dapRole, $department.$departmentName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($planIDValue)), 
             'Department');
     }
@@ -972,7 +1001,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $departmentName = self::TABLE_DEPARTMENT_NAME;
         
         $query = "SELECT $department.* FROM $department JOIN (SELECT * FROM $dap WHERE $dap.$dapPlanID = ? AND $dap.$dapRole = '$dapRolePartner') AS $dap ON $dap.$dapDepartmentID = $department.$departmentID ORDER BY $dap.$dapRole, $department.$departmentName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($planIDValue)), 
             'Department');
     }        
@@ -997,7 +1026,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $departmentName = self::TABLE_DEPARTMENT_NAME;
                                 
         $query = "SELECT $department.* FROM (SELECT * FROM $pap WHERE $pap.$papProgramID = ?) AS $pap JOIN $dap AS $dap ON $pap.$papPlanID = $dap.$dapPlanID JOIN $department ON $dap.$dapDepartmentID = $department.$departmentID ORDER BY $dap.$dapRole, $department.$departmentName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($programIDValue)), 
             'Department');
     }
@@ -1032,16 +1061,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $planTypeSubPlan = self::TABLE_PLAN_TYPE_SUB_PLAN;
         
         $query = "SELECT * FROM $plan WHERE $planType <> '$planTypeSubPlan' ORDER BY $planName ASC";
-        $queryResultArray = $this->getQueryResults($query, array());
-
-        $planArray = array();
-        foreach ($queryResultArray as $queryResult) {
-            $plan = Plan::buildFromDBRow($queryResult);
-            $plan->initialize($this);
-            $planArray[] = $plan;
-        }
-        
-        return $planArray;        
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array()),
+            'Plan');
     }    
     
     /**
@@ -1059,16 +1081,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $papChildID = self::TABLE_PLAN_AND_PLAN_CHILD_ID;
 
         $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pap WHERE $pap.$papParentID = ?) AS $pap ON $plan.$planID = $pap.$papChildID ORDER BY $plan.$planName ASC";
-        $queryResultArray = $this->getQueryResults($query, array($planIDValue));
-
-        $planArray = array();
-        foreach ($queryResultArray as $queryResult) {
-            $plan = Plan::buildFromDBRow($queryResult);
-            $plan->initialize($this);
-            $planArray[] = $plan;
-        }
-        
-        return $planArray;        
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($planIDValue)),
+            'Plan');
     }
     
     /**
@@ -1086,15 +1101,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $papChildID = self::TABLE_PLAN_AND_PLAN_CHILD_ID;
 
         $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pap WHERE $pap.$papChildID = ?) AS $pap ON $plan.$planID = $pap.$papParentID";
-        $queryResult = $this->getQueryResult($query, array($planIDValue));
-        
-        $parentPlan = null;
-        if ($queryResult) {
-            $parentPlan = Plan::buildFromDBRow($queryResult);
-            $parentPlan->initialize($this);
-        }
-        
-        return $parentPlan;        
+        return $this->createObjectFromDatabaseRow(
+            $this->getQueryResult($query, array($planIDValue)),
+            'Plan');
     }    
 
     
@@ -1125,7 +1134,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         }
 
         $query = "SELECT $cpr.* FROM $cprTable JOIN (SELECT * FROM $pac WHERE $pac.$pacPlanID = ?) AS $pac ON $cpr.$cprID = $pac.$pacCPRID ORDER BY $cpr.$cprType, $cpr.$cprName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, $valueArray), 
             'CoursePlanRequirement');        
     }
@@ -1154,7 +1163,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         }
 
         $query = "SELECT $tpr.* FROM $tprTable JOIN (SELECT * FROM $pat WHERE $pat.$patPlanID = ?) AS $pat ON $tpr.$tprID = $pat.$patTPRID ORDER BY $tpr.$tprType, $tpr.$tprName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, $valueArray), 
             'TextPlanRequirement');        
     }    
@@ -1202,14 +1211,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $pacCPRID = self::TABLE_PLAN_AND_CPR_CPR_ID;
         
         $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pac WHERE $pac.$pacCPRID = ?) AS $pac ON $plan.$planID = $pac.$pacPlanID ORDER BY $plan.$planName ASC";
-        $resultRow = $this->getQueryResult($query, array($cprIDValue));
-        
-        $resultPlan = Plan::buildFromDBRow($resultRow);
-        if ($resultPlan) {
-            $resultPlan->initialize($this);
-        }
-        
-        return $resultPlan;        
+        return $this->createObjectFromDatabaseRow(
+            $this->getQueryResult($query, array($cprIDValue)),
+            'Plan');
     }
 
     /**
@@ -1227,14 +1231,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $patTPRID = self::TABLE_PLAN_AND_TPR_TPR_ID;
         
         $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pat WHERE $pat.$patTPRID = ?) AS $pat ON $plan.$planID = $pat.$patPlanID ORDER BY $plan.$planName ASC";
-        $resultRow = $this->getQueryResult($query, array($tprIDValue));
-        
-        $resultPlan = Plan::buildFromDBRow($resultRow);
-        if ($resultPlan) {
-            $resultPlan->initialize($this);
-        }
-        
-        return $resultPlan;        
+        return $this->createObjectFromDatabaseRows(
+            $this->getQueryResult($query, array($tprIDValue)),
+            'Plan');
     }
     
     /**
@@ -1254,17 +1253,12 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cacOrAbove = self::TABLE_CPR_AND_COURSELIST_OR_ABOVE;
 
         $query = "SELECT $cl.*, $cac.$cacLevel, $cac.$cacOrAbove FROM $cl JOIN (SELECT * FROM $cac WHERE $cac.$cacCPRID = ?) AS $cac ON $cl.$clID = $cac.$cacCourseListID ORDER BY $cl.$clName ASC";
-        $queryResult = $this->getQueryResult($query, array($cprIDValue));
-        if (empty($queryResult)) {
-            return null;
-        }
-        
-        $courseList = CourseList::buildFromDBRow($queryResult);
-        $courseList->initialize($this, 
-            array(CourseList::INITIALIZE_LEVEL => $queryResult[$cacLevel], 
-                CourseList::INITIALIZE_OR_ABOVE => $queryResult[$cacOrAbove])
-        );
-        return $courseList;
+        return $this->createObjectFromDatabaseRow(
+            $this->getQueryResult($query, array($cprIDValue)),
+            'CourseList',
+            array(self::TABLE_CPR_AND_COURSELIST_LEVEL => self::TABLE_CPR_AND_COURSELIST_LEVEL_NONE, 
+                self::TABLE_CPR_AND_COURSELIST_OR_ABOVE => false)
+            );
     }    
     
     /**
@@ -1294,10 +1288,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
         }        
         $query .= " ORDER BY $course.$courseSubject, $course.$courseNumber ASC";
         
-        $courseEntryArray = self::buildFromDBRows(
+        $courseEntryArray = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($courseListIDValue)), 
             'CourseEntry');
-        return Course::createArrayFromCourseEntries($courseEntryArray);     
+        return Course::buildCoursesFromCourseEntries($courseEntryArray);     
     }
 
     /**
@@ -1317,19 +1311,12 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cacOrAbove = self::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE;
 
         $query = "SELECT $cl.*, $cac.$cacLevel, $cac.$cacOrAbove FROM $cl JOIN (SELECT * FROM $cac WHERE $cac.$cacParentID = ?) AS $cac ON $cl.$clID = $cac.$cacChildID ORDER BY $cl.$clName ASC";
-        $queryResultArray = $this->getQueryResults($query, array($courseListIDValue));
-
-        $courseListArray = array();
-        foreach ($queryResultArray as $queryResult) {
-            $courseList = CourseList::buildFromDBRow($queryResult);
-            $courseList->initialize($this, 
-                array(CourseList::INITIALIZE_LEVEL => $queryResult[$cacLevel], 
-                    CourseList::INITIALIZE_OR_ABOVE => $queryResult[$cacOrAbove])
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($courseListIDValue)),
+                'CourseList',
+                array(self::TABLE_COURSELIST_AND_COURSELIST_LEVEL => self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
+                    self::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE => false)
             );
-            $courseListArray[] = $courseList;
-        }
-        
-        return $courseListArray;        
     }
     
     /**
@@ -1356,7 +1343,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
             self::getCourseListLevelArguments($levelValue, $orAboveValue));
        
         $query = "SELECT $cl.* FROM ($cl JOIN (SELECT * FROM $cac WHERE $cac.$cacChildID = ? $levelCondition) AS $cac ON $cl.$clID = $cac.$cacParentID) ORDER BY $cl.$clName ASC";                
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, $queryArguments),
             'CourseList');        
     }        
@@ -1374,8 +1361,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $calLevel = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_LEVEL;
         $calOrAbove = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_OR_ABOVE;
 
-        $query = "SELECT $calLevel, $calOrAbove FROM $cal WHERE ($calParentID = ?) AND ($calChildID = ?)";
-        
+        $query = "SELECT $calLevel, $calOrAbove FROM $cal WHERE ($calParentID = ?) AND ($calChildID = ?)";        
         return $this->getQueryResult($query, array($parentCourseListID, $childCourseListID));
     }
         
@@ -1390,13 +1376,11 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $carRelationship = self::TABLE_COURSELIST_AND_RELATIONSHIP_RELATIONSHIP;
 
         $query = "SELECT $carRelationship FROM $car WHERE ($carListID = ?)";
-
         $query_result = $this->getQueryResult($query, array($courseListID));
                 
         return (is_array($query_result) && 
             array_key_exists(self::TABLE_COURSELIST_AND_RELATIONSHIP_RELATIONSHIP, $query_result)) ?
-               $query_result[self::TABLE_COURSELIST_AND_RELATIONSHIP_RELATIONSHIP] : null;
-        
+               $query_result[self::TABLE_COURSELIST_AND_RELATIONSHIP_RELATIONSHIP] : null;        
     }
         
     /**
@@ -1426,12 +1410,13 @@ class CurriculumMappingDatabase extends DatabaseManager {
         
         // Start by finding all CPRs that have this list as their direct child                
         $query = "SELECT $cpr.* FROM ($cpr JOIN (SELECT * FROM $cac WHERE $cac.$cacCourseListID = ? $levelCondition) AS $cac ON $cpr.$cprID = $cac.$cacCPRID) ORDER BY $cpr.$cprName ASC";
-        $queryResultArray = $this->getQueryResults($query, $queryArguments);
+        $parentCPRArray = $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, $queryArguments),
+            'CoursePlanRequirement');
                 
         // Add these CPRs to the result; index by the ID to prevent duplicates
-        foreach ($queryResultArray as $queryResult) {
-            $cprResult = CPR::buildFromDBRow($queryResult);
-            $cprResultArray[$cprResult->getDBID()] = $cprResult;
+        foreach ($parentCPRArray as $parentCPR) {
+            $cprResultArray[$parentCPR->getDBID()] = $parentCPR;
         }
                 
         // Now find all CourseLists that have this list as a direct child
@@ -1439,13 +1424,13 @@ class CurriculumMappingDatabase extends DatabaseManager {
         
         // Go through each of these and find their CPR ancestors
         foreach ($parentCourseListArray as $parentCourseList) {
-            $recursiveCPRList = $this->getCPRsForCourseList($parentCourseList->getDBID());
-            
-            foreach ($recursiveCPRList as $recursiveCPR) {
+            $recursiveCPRArray = $this->getCPRsForCourseList($parentCourseList->getDBID());
+
+            foreach ($recursiveCPRArray as $recursiveCPR) {
                 $cprResultArray[$recursiveCPR->getDBID()] = $recursiveCPR;
             }            
         }
-                
+        
         return array_values($cprResultArray);
     }   
     
@@ -1460,7 +1445,6 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $casSubject = self::TABLE_COURSELIST_AND_SUBJECT_SUBJECT;
 
         $query = "SELECT $casSubject FROM $cas WHERE ($casListID = ?)";
-
         $query_result = $this->getQueryResult($query, array($courseListID));
                 
         return (is_array($query_result) && 
@@ -1486,7 +1470,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $number = self::TABLE_COURSE_NUMBER;
         
         $query = "SELECT * FROM $course WHERE $id = ? ORDER BY $subject, $number ASC";
-        $courseEntryArray = self::buildFromDBRows(
+        $courseEntryArray = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($idValue)), 
             'CourseEntry');
         return new Course($courseEntryArray);    
@@ -1499,9 +1483,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      
      */
     public function getCLLOFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_CLLO, self::TABLE_CLLO_ID, $idValue);
-
-        return ($row) ? CLLO::buildFromDBRow($row) : null;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_CLLO, self::TABLE_CLLO_ID, $idValue),
+            'CourseLevelLearningOutcome');
     }
 
     /**
@@ -1511,9 +1495,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return 
      */
     public function getPLLOFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_PLLO, self::TABLE_PLLO_ID, $idValue);
-
-        return ($row) ? PLLO::buildFromDBRow($row) : null;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_PLLO, self::TABLE_PLLO_ID, $idValue),
+            'PlanLevelLearningOutcome');
     }
 
     /**
@@ -1523,9 +1507,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return  
      */
     public function getILOFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_ILO, self::TABLE_ILO_ID, $idValue);
-
-        return ($row) ? ILO::buildFromDBRow($row) : null;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_ILO, self::TABLE_ILO_ID, $idValue),
+            'InstitutionLearningOutcome');
     }
 
     /**
@@ -1535,9 +1519,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      
      */
     public function getDLEFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_DLE, self::TABLE_DLE_ID, $idValue);
-
-        return ($row) ? DLE::buildFromDBRow($row) : null;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_DLE, self::TABLE_DLE_ID, $idValue),
+            'DegreeLevelExpectation');
     }
 
     /**
@@ -1547,9 +1531,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return
      */
     public function getUserFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_USER, self::TABLE_USER_ID, $idValue);
-
-        return ($row) ? User::buildFromDBRow($row) : null;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_USER, self::TABLE_USER_ID, $idValue),
+            'User');
     }
 
     /**
@@ -1559,9 +1543,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      
      */
     public function getRevisionFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_REVISION, self::TABLE_REVISION_ID, $idValue);
-
-        return ($row) ? Revision::buildFromDBRow($row) : null;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_REVISION, self::TABLE_REVISION_ID, $idValue),
+            'Revision');
     }
     
     /**
@@ -1571,9 +1555,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return    
      */
     public function getDepartmentFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_DEPARTMENT, self::TABLE_DEPARTMENT_ID, $idValue);
-
-        return ($row) ? Department::buildFromDBRow($row) : null;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_DEPARTMENT, self::TABLE_DEPARTMENT_ID, $idValue),
+            'Department');
     }   
     
     /**
@@ -1583,9 +1567,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      
      */
     public function getFacultyFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_FACULTY, self::TABLE_FACULTY_ID, $idValue);
-
-        return ($row) ? Faculty::buildFromDBRow($row) : null;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_FACULTY, self::TABLE_FACULTY_ID, $idValue),
+            'Faculty');
     }
     
     /**
@@ -1595,9 +1579,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      
      */
     public function getDegreeFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_DEGREE, self::TABLE_DEGREE_ID, $idValue);
-
-        return ($row) ? Degree::buildFromDBRow($row) : null;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_DEGREE, self::TABLE_DEGREE_ID, $idValue),
+            'Degree');
     }
     
     /**
@@ -1607,17 +1591,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      
      */
     public function getPlanFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_PLAN, self::TABLE_PLAN_ID, $idValue);
-        if (! $row) {
-            return null;
-        }
-        
-        $plan = Plan::buildFromDBRow($row);
-        if ($plan) {
-            $plan->initialize($this);
-        }
-        
-        return $plan; 
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_PLAN, self::TABLE_PLAN_ID, $idValue),
+            'Plan');
     }
 
     /**
@@ -1627,13 +1603,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      
      */
     public function getProgramFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_PROGRAM, self::TABLE_PROGRAM_ID, $idValue);
-        $program = Program::buildFromDBRow($row);
-        if ($program) {
-            $program->initialize($this);
-        }
-
-        return $program;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_PROGRAM, self::TABLE_PROGRAM_ID, $idValue),
+            'Program');
     } 
     
     /**
@@ -1643,8 +1615,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      
      */
     public function getCPRFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_CPR, self::TABLE_CPR_ID, $idValue);
-        return CPR::buildFromDBRow($row);
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_CPR, self::TABLE_CPR_ID, $idValue),
+            'CoursePlanRequirement');
     } 
 
     /**
@@ -1654,8 +1627,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      
      */
     public function getTPRFromID($idValue) {
-        $row = $this->getRowFromID(self::TABLE_TPR, self::TABLE_TPR_ID, $idValue);
-        return TPR::buildFromDBRow($row);
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_TPR, self::TABLE_TPR_ID, $idValue),
+            'TextProgramRequirement');
     }     
 
     /**
@@ -1667,17 +1641,12 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public function getCourseListFromID($idValue, 
         $levelValue = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
         $orAboveValue = false) {
-        $row = $this->getRowFromID(self::TABLE_COURSELIST, self::TABLE_COURSELIST_ID, $idValue);
-        if (empty($row)) {
-            return null;
-        }
-        
-        $courseList = CourseList::buildFromDBRow($row);
-        $courseList->initialize($this,
-            array(CourseList::INITIALIZE_LEVEL => $levelValue, 
-                CourseList::INITIALIZE_OR_ABOVE => $orAboveValue)
-        );
-        return $courseList;
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_COURSELIST, self::TABLE_COURSELIST_ID, $idValue),
+            'CourseList',
+            array(self::TABLE_COURSELIST_AND_COURSELIST_LEVEL => $levelValue, 
+                self::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE => $orAboveValue)
+            );
     }     
     
     /**
@@ -1738,7 +1707,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      *              parent ID is null)
      */
     public function getTopLevelCLLOs() {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getTopLevelRows(self::TABLE_CLLO, 
                 self::TABLE_CLLO_PARENT_ID, self::TABLE_CLLO_NUMBER),
             'CourseLevelLearningOutcome');
@@ -1751,7 +1720,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return               An array of CLLOs with that parent
      */
     public function getChildCLLOs($clloIDValue) {
-       return self::buildFromDBRows(
+       return $this->createObjectsFromDatabaseRows(
            $this->getChildRows(self::TABLE_CLLO, 
                 self::TABLE_CLLO_PARENT_ID, $clloIDValue,
                 self::TABLE_CLLO_NUMBER),
@@ -1765,7 +1734,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      *              parent ID is null)
      */
     public function getTopLevelPLLOs() {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getTopLevelRows(self::TABLE_PLLO, 
                 self::TABLE_PLLO_PARENT_ID, self::TABLE_PLLO_NUMBER),
             'PlanLevelLearningOutcome');
@@ -1778,7 +1747,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return               An array of PLLOs with that parent
      */
     public function getChildPLLOs($plloIDValue) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getChildRows(self::TABLE_PLLO, 
                 self::TABLE_PLLO_PARENT_ID, $plloIDValue, 
                 self::TABLE_PLLO_NUMBER),
@@ -1792,7 +1761,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      *              parent ID is null)
      */
     public function getTopLevelILOs() {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getTopLevelRows(self::TABLE_ILO, 
                 self::TABLE_ILO_PARENT_ID, self::TABLE_ILO_NUMBER),
             'InstitutionLearningOutcome');
@@ -1805,7 +1774,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return              An array of ILOs with that parent
      */
     public function getChildILOs($iloIDValue) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getChildRows(self::TABLE_ILO, 
                 self::TABLE_ILO_PARENT_ID, $iloIDValue, self::TABLE_ILO_NUMBER),
             'InstitutionLearningOutcome');
@@ -1818,7 +1787,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      *              parent ID is null)
      */
     public function getTopLevelDLEs() {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getTopLevelRows(self::TABLE_DLE, 
                 self::TABLE_DLE_PARENT_ID, self::TABLE_DLE_NUMBER),
             'DegreeLevelExpectation');
@@ -1831,7 +1800,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return              An array of DLEs with that parent
      */
     public function getChildDLEs($dleIDValue) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getChildRows(self::TABLE_DLE, 
                 self::TABLE_DLE_PARENT_ID, $dleIDValue, self::TABLE_DLE_NUMBER),
             'DegreeLevelExpectation');
@@ -1857,7 +1826,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
 
         $query = "SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cac WHERE $cac.$cacCourseID = ?) AS $cac ON $cllo.$clloID = $cac.$cacCLLOID ORDER BY $cllo.$clloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($idValue)),
             'CourseLevelLearningOutcome');
     }
@@ -1879,7 +1848,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
         
         $query = "SELECT $course.* FROM $course JOIN (SELECT * FROM $cac WHERE $cac.$cacCLLOID = ?) AS $cac ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber ASC";
-        $courseEntryArray = self::buildFromDBRows(
+        $courseEntryArray = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($idValue)), 
             'CourseEntry');
         return new Course($courseEntryArray); 
@@ -1910,7 +1879,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $query .= self::getQuestionMarkString($clloIDValuesArray);
         $query .= ") AS $cap ON $pllo.$plloID = $cap.$capPLLOID ORDER BY $pllo.$plloNumber ASC";
 
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, $clloIDValuesArray),
             'PlanLevelLearningOutcome');
     }
@@ -1936,7 +1905,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $padDLEID = self::TABLE_PLLO_AND_DLE_DLE_ID;
 
         $query = "SELECT $pllo.* FROM $pllo JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON $pllo.$plloID = $pad.$padPLLOID ORDER BY $pllo.$plloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($dleIDValue)),
             'PlanLevelLearningOutcome');
     }
@@ -1962,7 +1931,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $paiILOID = self::TABLE_PLLO_AND_ILO_ILO_ID;
 
         $query = "SELECT $pllo.* FROM $pllo JOIN (SELECT * FROM $pai WHERE $pai.$paiILOID = ?) AS $pai ON $pllo.$plloID = $pai.$paiPLLOID ORDER BY $pllo.$plloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($iloIDValue)),
             'PlanLevelLearningOutcome');
     }
@@ -1997,7 +1966,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
 
         $query = "SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cap WHERE $cap.$capPLLOID = ?) AS $cap ON $cllo.$clloID = $cap.$capCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($plloIDValue)),
             'CourseLevelLearningOutcome');
     }
@@ -2033,7 +2002,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
 
         $query = "SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cap WHERE $cap.$capPLLOID = ?) AS $cap ON $cllo.$clloID = $cap.$capCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN (SELECT * FROM $course WHERE $course.$courseSubject = ?) AS $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($plloIDValue, $subjectValue)),
             'CourseLevelLearningOutcome');
     }    
@@ -2068,7 +2037,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
 
         $query = "SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cai WHERE $cai.$caiILOID = ?) AS $cai ON $cllo.$clloID = $cai.$caiCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($iloIDValue)),
             'CourseLevelLearningOutcome');
     }
@@ -2096,7 +2065,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $query = "SELECT DISTINCT $ilo.* FROM $ilo JOIN (SELECT * FROM $cai WHERE $cai.$caiCLLOID IN ";
         $query .= self::getQuestionMarkString($clloIDValuesArray);
         $query .= ") AS $cai ON $ilo.$iloID = $cai.$caiILOID ORDER BY $ilo.$iloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, $clloIDValuesArray),
             'InstitutionLearningOutcome');
     }
@@ -2122,7 +2091,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $paiPLLOID = self::TABLE_PLLO_AND_ILO_PLLO_ID;
 
         $query = "SELECT $ilo.* FROM $ilo JOIN (SELECT * FROM $pai WHERE $pai.$paiPLLOID = ?) AS $pai ON $ilo.$iloID = $pai.$paiILOID ORDER BY $ilo.$iloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($plloIDValue)),
             'InstitutionLearningOutcome');
     }
@@ -2147,12 +2116,11 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $dleID = self::TABLE_DLE_ID;
 
         $query = "SELECT DISTINCT $pllo.* FROM $pllo JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON $pllo.$plloID = $pad.$padPLLOID JOIN $dle ON $dle.$dleID = $pad.$padDLEID ORDER BY $pllo.$plloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($idValue)),
             'PlanLevelLearningOutcome');
     }
-    
-    
+        
     /**
      * 
      * @param type $dleIDValue
@@ -2189,7 +2157,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $padPLLOID = self::TABLE_PLLO_AND_DLE_PLLO_ID;
                 
         $query = "SELECT $pllo.* FROM (SELECT DISTINCT $pllo.* FROM (SELECT * FROM $department WHERE $department.$departmentID = ?) AS $department JOIN department_and_subject ON $department.$departmentID = $das.$dasDepartmentID JOIN $course ON $das.$dasSubject = $course.$courseSubject JOIN $cac ON $course.$courseID = $cac.$cacCourseID JOIN $cap ON $cac.$cacCLLOID = $cap.$capCLLOID JOIN $pllo ON $cap.$capPLLOID = $pllo.$plloID) AS $pllo JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON $pllo.$plloID = $pad.$padPLLOID ORDER BY $pllo.$plloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($departmentIDValue, $dleIDValue)),
             'PlanLevelLearningOutcome');
     }
@@ -2222,7 +2190,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $padPLLOID = self::TABLE_PLLO_AND_DLE_PLLO_ID;
               
         $query = "SELECT DISTINCT $pllo.* FROM (SELECT * FROM course WHERE $course.$courseSubject = ?) AS $course JOIN $cac ON $course.$courseID = $cac.$cacCourseID JOIN $cap ON $cac.$cacCLLOID = $cap.$capCLLOID JOIN $pllo ON $cap.$capPLLOID = $pllo.$plloID JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON $pllo.$plloID = $pad.$padPLLOID ORDER BY $pllo.$plloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($subjectValue, $dleIDValue)),
             'PlanLevelLearningOutcome');
     }    
@@ -2248,8 +2216,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $dleNumber = self::TABLE_DLE_NUMBER;
 
         $query = "SELECT $dle.* FROM $dle JOIN (SELECT $pad.* FROM $pad JOIN (SELECT * FROM $pllo WHERE $pllo.$plloID = ? OR $pllo.$plloParentID = ?) AS $pllo ON $pad.$padPLLOID = $pllo.$plloID) AS $pad ON $dle.$dleID = $pad.$padDLEID ORDER BY $dle.$dleNumber ASC";
-        $result = $this->getQueryResult($query, array($idValue, $idValue));        
-        return $result ? DLE::buildFromDBRow($result) : null;
+        return $this->createObjectFromDatabaseRow(
+            $this->getQueryResult($query, array($idValue, $idValue)),
+            'DegreeLevelExpectation');        
     }
 
 
@@ -2305,10 +2274,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
 
         $query = "SELECT * FROM $course WHERE ($courseSubject LIKE ?) $connector ($courseNumber LIKE ?) ORDER BY {$courseSubject}, $courseNumber ASC";                    
         
-        $courseEntryArray = self::buildFromDBRows(
+        $courseEntryArray = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, $valueArray),
             'CourseEntry');
-        return Course::createArrayFromCourseEntries($courseEntryArray);
+        return Course::buildCoursesFromCourseEntries($courseEntryArray);
        
     }
 
@@ -2327,7 +2296,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $likeString = "%{$searchString}%";
 
         $query = "SELECT * FROM $cllo WHERE ($clloNumber LIKE ?) OR ($clloText LIKE ?) OR ($clloNotes LIKE ?) ORDER BY $clloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($likeString, $likeString, $likeString)),
             'CourseLevelLearningOutcome');
     }
@@ -2347,7 +2316,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $likeString = "%{$searchString}%";
 
         $query = "SELECT * FROM $pllo WHERE (($plloNumber LIKE ?) OR ($plloText LIKE ?) OR ($plloNotes LIKE ?)) ORDER BY $plloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($likeString, $likeString, $likeString)),
             'PlanLevelLearningOutcome');
     }
@@ -2368,7 +2337,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $likeString = "%{$searchString}%";
 
         $query = "SELECT * FROM $ilo WHERE (($iloNumber LIKE ?) OR ($iloText LIKE ?) OR ($iloDescription LIKE ?) OR ($iloNotes LIKE ?)) ORDER BY $iloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($likeString, $likeString, $likeString, $likeString)),
             'InstitutionLearningOutcome');
     }
@@ -2390,7 +2359,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $query = "SELECT * FROM $dle WHERE";
         $query .= " (($dleNumber LIKE ?) OR ($dleText LIKE ?) OR ($dleNotes LIKE ?)) ORDER BY $dleNumber ASC";
 
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($likeString, $likeString, $likeString)),
             'DegreeLevelExpectation');
     }
@@ -2409,7 +2378,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $likeString = "%{$searchString}%";
 
         $query = "SELECT * FROM $revision WHERE (($revisionPrior LIKE ?) OR ($revisionDate LIKE ?)) ORDER BY $revisionDate DESC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($likeString, $likeString)),
             'Revision');
     }
@@ -2427,7 +2396,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $likeString = "%{$searchString}%";
 
         $query = "SELECT * FROM $faculty WHERE ($facultyName LIKE ?) ORDER BY $facultyName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($likeString)),
             'Faculty');
     }
@@ -2445,7 +2414,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $likeString = "%{$searchString}%";
 
         $query = "SELECT * FROM $department WHERE ($departmentName LIKE ?) ORDER BY $departmentName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($likeString)),
             'Department');
     }
@@ -2464,7 +2433,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $likeString = "%{$searchString}%";
 
         $query = "SELECT * FROM $degree WHERE ($degreeName LIKE ?) OR ($degreeCode LIKE ?) ORDER BY $degreeName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($likeString, $likeString)),
             'Degree');
     }
@@ -2486,7 +2455,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $likeString = "%{$searchString}%";
 
         $query = "SELECT * FROM $plan WHERE ($planName LIKE ?) OR ($planCode LIKE ?) OR ($planType LIKE ?) OR ($planText LIKE ?) OR ($planNotes LIKE ?) ORDER BY $planName ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($likeString, $likeString, $likeString, $likeString, $likeString)),
             'Plan');
     }
@@ -2507,11 +2476,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $likeString = "%{$searchString}%";
 
         $query = "SELECT * FROM $program WHERE ($programName LIKE ?) OR ($programType LIKE ?) OR ($programText LIKE ?) OR ($programNotes LIKE ?) ORDER BY $programName ASC";
-        $programArray = self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($likeString, $likeString, $likeString, $likeString)),
             'Program');
-        return Program::initializeAndSort($programArray, $this);
-
     }        
 
 
@@ -2557,7 +2524,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return                    An array of all the resulting PLLOs
      */
     public function getAllPLLOs($excludeIDArray = array()) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_PLLO, 
                     self::TABLE_PLLO_ID, self::TABLE_PLLO_NUMBER, 
                     array(), $excludeIDArray),
@@ -2572,7 +2539,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return                    An array of all the resulting ILOs
      */
     public function getAllILOs($excludeIDArray = array()) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_ILO, 
                 self::TABLE_ILO_ID, self::TABLE_ILO_NUMBER, 
                 array(), $excludeIDArray),
@@ -2587,7 +2554,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return                    An array of all the resulting DLEs
      */
     public function getAllDLEs($excludeIDArray = array()) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_DLE, 
                 self::TABLE_DLE_ID, self::TABLE_DLE_NUMBER, 
                 array(), $excludeIDArray),
@@ -2600,7 +2567,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return type
      */
     public function getCLLOsAndPLLOsForCLLO($clloID) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_CLLO_AND_PLLO, 
                 self::TABLE_CLLO_AND_PLLO_CLLO_ID, 
                 self::TABLE_CLLO_AND_PLLO_CLLO_ID, array($clloID)),
@@ -2613,7 +2580,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return type
      */
     public function getCLLOsAndILOsForCLLO($clloID) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_CLLO_AND_ILO, 
                 self::TABLE_CLLO_AND_ILO_CLLO_ID, 
                 self::TABLE_CLLO_AND_ILO_CLLO_ID, array($clloID)),
@@ -2626,7 +2593,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return type
      */
     public function getPLLOsAndILOsForPLLO($plloID) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_PLLO_AND_ILO, 
                 self::TABLE_PLLO_AND_ILO_PLLO_ID, 
                 self::TABLE_PLLO_AND_ILO_PLLO_ID, array($plloID)),
@@ -2639,7 +2606,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      An array of all the resulting Revisions
      */
     public function getAllRevisions() {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_REVISION, 
                 self::TABLE_REVISION_ID, self::TABLE_REVISION_DATE_AND_TIME, 
                 array(), array(), "DESC"),
@@ -2654,7 +2621,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return                    An array of all the resulting Faculties
      */
     public function getAllFaculties($excludeIDArray = array()) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_FACULTY, 
                 self::TABLE_FACULTY_ID, self::TABLE_FACULTY_NAME, 
                 array(), $excludeIDArray),
@@ -2669,7 +2636,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return                    An array of all the resulting Degrees
      */
     public function getAllDegrees($excludeIDArray = array()) {
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_DEGREE, 
                 self::TABLE_DEGREE_ID, self::TABLE_DEGREE_NAME, 
                 array(), $excludeIDArray),
@@ -2684,14 +2651,11 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return                    An array of all the resulting Programs
      */
     public function getAllPrograms($excludeIDArray = array()) {
-        $programArray = self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_PROGRAM, 
                 self::TABLE_PROGRAM_ID, self::TABLE_PROGRAM_NAME, 
                 array(), $excludeIDArray),
             'Program');
-        Program::initializeAndSort($programArray, $this);
-        
-        return $programArray;
     }    
 
     /**
@@ -2702,14 +2666,11 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return                    An array of all the resulting Plans
      */
     public function getAllPlans($excludeIDArray = array()) {
-        $programArray = self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getAllRows(self::TABLE_PLAN, 
                 self::TABLE_PLAN_ID, self::TABLE_PLAN_NAME, 
                 array(), $excludeIDArray),
             'Plan');
-        Plan::initializeAndSort($programArray, $this);
-        
-        return $programArray;
     }    
     
     
@@ -2734,7 +2695,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $dafFacultyID = self::TABLE_DEPARTMENT_AND_FACULTY_FACULTY_ID;
         
         $query = "SELECT $department.* FROM ((SELECT * FROM $faculty WHERE $faculty.$facultyID = ?) AS $faculty JOIN $daf ON $faculty.$facultyID = $daf.$dafFacultyID JOIN $department ON $daf.$dafDepartmentID = $department.$departmentID) ORDER BY $department.$departmentName ASC";        
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($facultyIDValue)),
             'Department');        
     }
@@ -2766,7 +2727,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         }
         $query .= " $faculty ON $daf.$dafFacultyID = $faculty.$facultyID ORDER BY $faculty.$facultyName ASC";
         
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, $valueArray),
             'Faculty');                
     }
@@ -2806,7 +2767,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $padPLLOID = self::TABLE_PLLO_AND_DLE_PLLO_ID;
         
         $query = "SELECT $cap.* FROM $cap JOIN (SELECT * FROM $cac WHERE $cac.$cacCourseID = ?) AS $cac ON $cac.$cacCLLOID = $cap.$capCLLOID JOIN $pllo ON $cap.$capPLLOID = $pllo.$plloID JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON (($pad.$padPLLOID = $pllo.$plloID) OR ($pad.$padPLLOID = $pllo.$plloParentID)) JOIN $cllo ON $cap.$capCLLOID = $cllo.$clloID ORDER BY $cllo.$clloNumber ASC";
-        return self::buildFromDBRows(
+        return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($courseIDValue, $dleIDValue)),
             'CLLOAndPLLO');
     }
@@ -2830,7 +2791,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
          $comparison = $editor ? "=" : "<>";
 
          $query = "SELECT * FROM $revision WHERE $userID $comparison ? ORDER BY $dateAndTime DESC LIMIT $limit ";
-         return self::buildFromDBRows(
+         return $this->createObjectsFromDatabaseRows(
              $this->getQueryResults($query, array($userID)), 'Revision');
      }
 

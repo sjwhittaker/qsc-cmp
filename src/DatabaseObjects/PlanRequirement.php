@@ -31,7 +31,21 @@ use Managers\CurriculumMappingDatabase as CMD;
  * The abstract class PlanRequirement contains elements and functionality 
  * common to all plan requirements.
  */
-abstract class PlanRequirement extends DatabaseObject {
+abstract class PlanRequirement extends DatabaseObject {    
+    /**************************************************************************
+     * Static Functions
+     **************************************************************************/
+    /**
+     * 
+     * @return type
+     */
+    public static function getSortFunction() {
+        return function($a, $b) { 
+                return strcmp($a->getName(), $b->getName());
+            };        
+    } 
+
+    
     /**************************************************************************
      * Member Variables
      **************************************************************************/

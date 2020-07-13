@@ -43,7 +43,7 @@ class Course {
      * @param type $courseEntryArray
      * @return 
      */
-    public static function createArrayFromCourseEntries($courseEntryArray) {        
+    public static function buildCoursesFromCourseEntries($courseEntryArray) {        
         if (empty($courseEntryArray)) {
             return array();
         }

@@ -34,6 +34,20 @@ use Managers\CurriculumMappingDatabase as CMD;
  */
 abstract class LearningOutcome extends DatabaseObject {
     /**************************************************************************
+     * Static Functions
+     **************************************************************************/
+    /**
+     * 
+     * @return type
+     */
+    public static function getSortFunction() {
+        return function($a, $b) { 
+                return strcmp($a->getNumber(), $b->getNumber());
+            };        
+    }    
+    
+    
+    /**************************************************************************
      * Member Variables
      **************************************************************************/
     protected $number = null;

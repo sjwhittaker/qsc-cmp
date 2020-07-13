@@ -47,13 +47,25 @@ class CourseEntry extends DatabaseObject {
      * @param $argArray        The row from the database
      */ 
      public static function buildFromDBRow($argArray) {
-         $id = $argArray[CMD::TABLE_COURSE_ID];
-         $subject = $argArray[CMD::TABLE_COURSE_SUBJECT];
-         $number = $argArray[CMD::TABLE_COURSE_NUMBER];
+        $id = $argArray[CMD::TABLE_COURSE_ID];
+        $subject = $argArray[CMD::TABLE_COURSE_SUBJECT];
+        $number = $argArray[CMD::TABLE_COURSE_NUMBER];
          
-         return new CourseEntry($id, $subject, $number);
-     }
-     
+        return new CourseEntry($id, $subject, $number);
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public static function getSortFunction() {
+        return function($a, $b) { 
+                $sortValue = strcmp($a->getSubject(), $b->getSubject());
+                return ($sortValue === 0) ? 
+                    strcmp($a->getNumber(), $b->getNumber()) : $sortValue;
+            };        
+    }    
+         
      
     /**************************************************************************
      * Member Variables

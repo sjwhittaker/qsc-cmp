@@ -41,16 +41,28 @@ class User extends DatabaseObject {
      *
      * @param $argArray        The course row from the database
      */ 
-     public static function buildFromDBRow($argArray) {
-         $id = $argArray[CMD::TABLE_USER_ID];
-         $firstName = $argArray[CMD::TABLE_USER_FIRST_NAME];
-         $lastName = $argArray[CMD::TABLE_USER_LAST_NAME];
-         $role = $argArray[CMD::TABLE_USER_ROLE];
-         $active = $argArray[CMD::TABLE_USER_ACTIVE];
+    public static function buildFromDBRow($argArray) {
+        $id = $argArray[CMD::TABLE_USER_ID];
+        $firstName = $argArray[CMD::TABLE_USER_FIRST_NAME];
+        $lastName = $argArray[CMD::TABLE_USER_LAST_NAME];
+        $role = $argArray[CMD::TABLE_USER_ROLE];
+        $active = $argArray[CMD::TABLE_USER_ACTIVE];
          
-         return new User($id, $firstName, $lastName, $role, $active);
-     }
-
+        return new User($id, $firstName, $lastName, $role, $active);
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public static function getSortFunction() {
+        return function($a, $b) { 
+                $sortValue = strcmp($a->getLastName(), $b->getLastName());
+                return ($sortValue === 0) ? 
+                    strcmp($a->getFirstName(), $b->getFirstName()) : $sortValue;
+            };        
+    }    
+    
      
     /**************************************************************************
      * Member Variables

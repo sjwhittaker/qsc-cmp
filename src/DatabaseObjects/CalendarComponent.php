@@ -34,6 +34,20 @@ use Managers\CurriculumMappingDatabase as CMD;
  */
 abstract class CalendarComponent extends DatabaseObject {
     /**************************************************************************
+     * Static Functions
+     **************************************************************************/
+    /**
+     * 
+     * @return type
+     */
+    public static function getSortFunction() {
+        return function($a, $b) { 
+                return strcmp($a->getName(), $b->getName());
+            };        
+    } 
+
+
+    /**************************************************************************
      * Member Variables
      **************************************************************************/
     protected $name = null;

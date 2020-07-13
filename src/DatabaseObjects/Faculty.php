@@ -47,7 +47,7 @@ class Faculty extends CalendarComponent {
 
         return new Faculty($id, $name);
     }
-    
+        
 
     /*************************************************************************
      * Constructor

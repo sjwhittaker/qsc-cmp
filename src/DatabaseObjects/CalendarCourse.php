@@ -70,6 +70,16 @@ class CalendarCourse extends DatabaseObject {
         return qsc_core_map_member_function($argArray, 
             __NAMESPACE__ .'\CalendarCourse::buildFromDBRow');        
     }
+    
+    /**
+     * 
+     * @return type
+     */
+    public static function getSortFunction() {
+        return function($a, $b) { 
+                return strcmp($a->getName(), $b->getName());            
+            };        
+    }    
 
 
     /**************************************************************************
