@@ -192,6 +192,8 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_DEPARTMENT_ID = "id";
     public const TABLE_DEPARTMENT_NAME = "name";
     public const TABLE_DEPARTMENT_NAME_MAX_LENGTH = 150;    
+    public const TABLE_DEPARTMENT_CODE = "code";
+    public const TABLE_DEPARTMENT_CODE_MAX_LENGTH = 10;    
 
     public const TABLE_DEPARTMENT_AND_FACULTY = "department_and_faculty";
     public const TABLE_DEPARTMENT_AND_FACULTY_DEPARTMENT_ID = "department_id";
@@ -279,6 +281,8 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_PLLO_TEXT_MAX_LENGTH = 100;
     public const TABLE_PLLO_NOTES = "notes";
     public const TABLE_PLLO_NOTES_MAX_LENGTH = 500;
+    public const TABLE_PLLO_PREFIX = "prefix";
+    public const TABLE_PLLO_PREFIX_MAX_LENGTH = 10;
     public const TABLE_PLLO_PARENT_ID = "parent_id";
 
     public const TABLE_PLLO_AND_DLE = "pllo_and_dle";
@@ -983,6 +987,32 @@ class CurriculumMappingDatabase extends DatabaseManager {
             $this->getQueryResults($query, array($planIDValue)), 
             'Department');
     }
+    
+    /**
+     * 
+     * @param type $planIDValue
+     * @return type
+     */
+    public function getAdministrativeDepartmentCodesForPLLO($plloIDValue) {
+        $pap = self::TABLE_PLAN_AND_PLLO;
+        $papPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
+        $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
+        
+        $dap = self::TABLE_DEPARTMENT_AND_PLAN;
+        $dapDepartmentID = self::TABLE_DEPARTMENT_AND_PLAN_DEPARTMENT_ID;
+        $dapPlanID = self::TABLE_DEPARTMENT_AND_PLAN_PLAN_ID;
+        $dapRole = self::TABLE_DEPARTMENT_AND_PLAN_ROLE;
+        $dapRoleAdministrator = self::TABLE_DEPARTMENT_AND_PLAN_ROLE_ADMINISTRATOR;
+
+        $department = self::TABLE_DEPARTMENT;
+        $departmentID = self::TABLE_DEPARTMENT_ID;
+        $departmentCode = self::TABLE_DEPARTMENT_CODE;
+        
+        $query = "SELECT DISTINCT $department.$departmentCode FROM (SELECT * FROM $pap WHERE $pap.$papPLLOID = ?) AS $pap JOIN (SELECT * FROM $dap WHERE $dap.role = 'Administrator') AS $dap ON $pap.$papPlanID = $dap.$dapPlanID JOIN $department ON $dap.$dapDepartmentID = $department.$departmentID ORDER BY $department.$departmentCode ASC";
+        $queryResult = $this->getQueryResults($query, array($plloIDValue));
+        return self::extractValueFromDBRows($queryResult, $departmentCode);
+    }
+    
     
     /**
      * 

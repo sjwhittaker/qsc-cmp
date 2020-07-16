@@ -44,10 +44,17 @@ class Department extends CalendarComponent {
     public static function buildFromDBRow($argArray) {
         $id = $argArray[CMD::TABLE_DEPARTMENT_ID];
         $name = $argArray[CMD::TABLE_DEPARTMENT_NAME];
+        $code = $argArray[CMD::TABLE_DEPARTMENT_CODE];
 
-        return new Department($id, $name);
+        return new Department($id, $name, $code);
     }
-
+    
+    
+    /**************************************************************************
+     * Member Variables
+     **************************************************************************/
+    protected $code = null;
+    
    
     /*************************************************************************
      * Constructor
@@ -57,9 +64,12 @@ class Department extends CalendarComponent {
      *
      * @param $argDBID         The department's database integer ID
      * @param $argName       The department's string name
+     * @param $argCode       The department's string code (possibly null)
      */
-    public function __construct($argDBID, $argName) {
+    public function __construct($argDBID, $argName, $argCode = null) {
         parent::__construct($argDBID, $argName);
+        
+        $this->code = $argCode;
     }
     
 
@@ -74,5 +84,17 @@ class Department extends CalendarComponent {
     public function getLinkToView() {
         return self::getLinkWithID(QSC_CMP_DEPARTMENT_VIEW_PAGE_LINK);
     }
+    
+    
+    /*************************************************************************
+     * Get and Set Methods
+     *************************************************************************/
+    /**
+     * 
+     * @return type
+     */
+    public function getCode($noneOption = null) {
+        return qsc_core_get_none_if_empty($this->code, $noneOption);
+    }    
 
 }

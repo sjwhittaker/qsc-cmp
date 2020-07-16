@@ -348,6 +348,8 @@ qsc_core_define_constant("QSC_CMP_COURSELIST_SUBSETS_MAXIMUM_ADDITIONAL_UNITS", 
 qsc_core_define_constant("QSC_CMP_PROGRAM_AND_PLAN_NAME_DELIMETER", "-");
 qsc_core_define_constant("QSC_CMP_PROGRAM_AND_PLAN_CODE_DELIMETER", "-");
 
+qsc_core_define_constant("QSC_CMP_PLLO_PREFIX_DELIMETER", "-");
+
 qsc_core_define_constant("QSC_CMP_PLAN_REQUIREMENT_START_NUMBER", 1);
 qsc_core_define_constant("QSC_CMP_SUB_PLAN_START_LETTER", 'A');
 qsc_core_define_constant("QSC_CMP_SUB_PLAN_REQUIREMENT_START_NUMBER", 1);

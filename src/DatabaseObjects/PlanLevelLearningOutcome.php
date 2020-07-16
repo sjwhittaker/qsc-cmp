@@ -32,6 +32,11 @@ use Managers\CurriculumMappingDatabase as CMD;
  */
 class PlanLevelLearningOutcome extends LearningOutcome {
     /**************************************************************************
+     * Constants
+     **************************************************************************/
+    public const DEFAULT_PREFIX = "PLLO";
+
+    /**************************************************************************
      * Static Functions
      **************************************************************************/
     /**
@@ -56,10 +61,11 @@ class PlanLevelLearningOutcome extends LearningOutcome {
         }
 
         // These values are optional and can be null
-        $parentDBID = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT, FILTER_SANITIZE_NUMBER_INT);
         $notes = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_NOTES, FILTER_SANITIZE_STRING);
+        //$prefix = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_PREFIX, FILTER_SANITIZE_STRING);
+        $parentDBID = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT, FILTER_SANITIZE_NUMBER_INT);
 
-        return new PlanLevelLearningOutcome($id, $number, $text, $notes, $parentDBID);
+        return new PlanLevelLearningOutcome($id, $number, $text, $notes, $prefix, $parentDBID);
     }    
     
     /** 
@@ -73,10 +79,17 @@ class PlanLevelLearningOutcome extends LearningOutcome {
         $number = $argArray[CMD::TABLE_PLLO_NUMBER];
         $text = $argArray[CMD::TABLE_PLLO_TEXT];
         $notes = $argArray[CMD::TABLE_PLLO_NOTES];
+        $prefix = $argArray[CMD::TABLE_PLLO_PREFIX];
         $parentDBID = $argArray[CMD::TABLE_PLLO_PARENT_ID];
-         
-        return new PlanLevelLearningOutcome($id, $number, $text, $notes, $parentDBID);
+        
+        return new PlanLevelLearningOutcome($id, $number, $text, $notes, $prefix, $parentDBID);
     }
+    
+    
+    /**************************************************************************
+     * Member Variables
+     **************************************************************************/
+    protected $prefix = null;    
      
 
     /**************************************************************************
@@ -90,17 +103,69 @@ class PlanLevelLearningOutcome extends LearningOutcome {
      * @param $argNumber       The outcome's string 'number'
      * @param $argText         The outcome's text
      * @param $argNotes        The outcome's notes
+     * @param $argPrefix       The outcome's prefix (default
+     *                         value of null)
      * @param $argParentDBID   The outcome's parent's database ID (default
      *                         value of null)
      */ 
-    protected function __construct($argDBID, $argNumber, $argText, $argNotes, $argParentDBID = null) {
+    protected function __construct($argDBID, $argNumber, $argText, $argNotes, $argPrefix = null, $argParentDBID = null) {
         parent::__construct($argDBID, $argNumber, $argText, $argNotes, $argParentDBID);
+        
+        $this->prefix = $argPrefix;
     }
+    
+    
+    /*************************************************************************
+     * Initialize
+     *************************************************************************/
+    /**
+     * Initializes the member variables that can't be set by a single DB row;
+     * in this case, the prefix.
+     * 
+     * @param type $dbCurriculum
+     */
+    public function initialize($dbCurriculum, $argArray = array()) {
+        // If a unique prefix was defined for a PLLO in its row in the DB,
+        // use it.
+        if ($this->prefix) {
+            return;
+        }
+        
+        // Otherwise, try to create a prefix from its plan codes if there 
+        // are only 1 or 2
+        $planArray = $dbCurriculum->getPlansFromPLLO($this->getDBID());
+        $numberOfPlans = count($planArray);
+        if ($numberOfPlans && ($numberOfPlans < 3)) {
+            $planCodeArray = qsc_core_map_member_function($planArray, 'getCode');
+            $this->prefix = join(QSC_CMP_PLLO_PREFIX_DELIMETER, $planCodeArray);
+            return;
+        }
+        
+        // If that fails, see if any administering department has a code 
+        // defined.
+        $departmentCodeArray = $dbCurriculum->getAdministrativeDepartmentCodesForPLLO($this->getDBID());
+        $numberOfCodes = count($departmentCodeArray);
+        if ($numberOfCodes && ($numberOfCodes < 3)) {
+            $this->prefix = join(QSC_CMP_PLLO_PREFIX_DELIMETER, $departmentCodeArray);
+            return;
+        }
+        
+        // If all else fails, use the default
+        $this->prefix = self::DEFAULT_PREFIX;
+    }    
 
      
     /**************************************************************************
      * Get and Set Methods
      **************************************************************************/
+    /**
+     * 
+     * @return type
+     */
+    public function getPrefix() {
+        return $this->prefix;   
+    }     
+    
     /** 
      * The get method for the PLLO's name, which includes 'PLLO ' followed by
      * the number.
@@ -108,7 +173,7 @@ class PlanLevelLearningOutcome extends LearningOutcome {
      * @return  The string name
      */ 
     public function getName() {
-        return "PLLO ".$this->number;   
+        return $this->prefix." ".$this->number;   
     }   
 
     /** 
