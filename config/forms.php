@@ -44,6 +44,7 @@ function qsc_cmp_display_pllo_form($form_action, $form_id, $form_type, $submit_b
 
     $pllo_id = null;
     $pllo_number = null;
+    $pllo_prefix = null;
     $pllo_text = null;
     $pllo_notes = null;
     $parent_dle_id = null;
@@ -59,12 +60,11 @@ function qsc_cmp_display_pllo_form($form_action, $form_id, $form_type, $submit_b
         // Get the basics from the PLLO
         $pllo_id = $pllo->getDBID();
         $pllo_number = $pllo->getNumber();
+        $pllo_prefix = $pllo->getPrefix();
         $pllo_text = $pllo->getText();
         $pllo_notes = $pllo->getNotes();
 
         $hidden_controls[QSC_CMP_FORM_PLLO_ID] = $pllo_id;
-
-        $pllo_array = $db_curriculum->getAllPLLOs(array($pllo_id));
 
         // Is there parent PLLO? If so, get it
         if ($pllo->hasParent()) {
@@ -99,10 +99,26 @@ function qsc_cmp_display_pllo_form($form_action, $form_id, $form_type, $submit_b
             )
         );
         ?>               
-    </div>        
+    </div>
     <div class="form-section">
+        <?php qsc_core_form_display_input_and_select_group(
+            "Plan",
+            QSC_CMP_FORM_PLLO_PLAN_INPUT, 
+            QSC_CMP_FORM_PLLO_PLAN_SELECT, 
+            array(
+                QSC_CORE_FORM_INPUT_HELP_ID => QSC_CMP_FORM_PLLO_PLAN_INPUT_HELP,
+                QSC_CORE_FORM_INPUT_HELP_TEXT => "Type the plan code <strong>or</strong> name to filter the options in the list.",
+                QSC_CORE_FORM_SELECT_HELP_ID => QSC_CMP_FORM_PLLO_PLAN_SELECT_HELP,
+                QSC_CORE_FORM_SELECT_HELP_TEXT => "Select the matching plan in this list; its associated PLLOs will be loaded below.",
+                QSC_CORE_FORM_SIDE_BY_SIDE => true,
+                QSC_CORE_FORM_REQUIRED => true
+            )
+        );
+        ?>                 
+    </div>
+    <div class="form-section">                
         <?php qsc_core_form_display_label(QSC_CMP_FORM_PLLO_PARENT_DLE_SELECT, "Parent DLE", true); ?>    
-        <?php qsc_core_form_display_label(QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT_HELP, " <em>or</em> PLLO"); ?>    
+        <?php qsc_core_form_display_label(QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT_HELP, " <em>or</em> PLLO"); ?>        
         <div class="form-row">                    
             <div class="col-lg-6">
                 <?php qsc_core_form_display_help_text(QSC_CMP_FORM_PLLO_PARENT_DLE_SELECT_HELP, "Select the parent DLE from this list (if any)."); ?>               
@@ -114,18 +130,15 @@ function qsc_cmp_display_pllo_form($form_action, $form_id, $form_type, $submit_b
                 <input type="button" id="<?= QSC_CMP_FORM_PLLO_PARENT_DLE_UNSELECT; ?>" name="<?= QSC_CMP_FORM_PLLO_PARENT_DLE_UNSELECT; ?>" value="Unselect"/>
             </div>
             <div class="col-lg-6">
-                <?php qsc_core_form_display_help_text(QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT_HELP, "Select the parent PLLO from this list (if any)."); ?>
+                <?php qsc_core_form_display_help_text(QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT_HELP, "Select the parent PLLO from this list (if any). You <strong>must</strong> select a plan first to populate this list."); ?>
                 <select class="custom-select" name="<?= QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT; ?>" id="<?= QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT; ?>" aria-describedby="<?= QSC_CMP_FORM_PLLO_PARENT_PLLO_OR_DLE_HELP; ?>" size="6">
-                <?php foreach ($pllo_array as $other_PLLO) : ?>
-                    <option value="<?= $other_PLLO->getDBID(); ?>"<?= ($other_PLLO->getDBID() == $parent_pllo_id) ? " selected" : ""; ?>><?= $other_PLLO->getShortSnippet(); ?></option>
-                <?php endforeach; ?>
                 </select>
                 <input type="button" id="<?= QSC_CMP_FORM_PLLO_PARENT_PLLO_UNSELECT; ?>" name="<?= QSC_CMP_FORM_PLLO_PARENT_PLLO_UNSELECT; ?>" value="Unselect"/>
             </div>
             <div class="col-12">
                 <?php qsc_core_form_display_help_text(QSC_CMP_FORM_PLLO_PARENT_PLLO_OR_DLE_HELP, "a PLLO must be associated with a single parent DLE <strong>or</strong> a parent PLLO, <strong>not both</strong>.", true); ?>               
             </div>
-        </div>
+        </div>        
     </div>
     <div class="form-section">
         <?php qsc_core_form_display_textarea(
@@ -142,6 +155,19 @@ function qsc_cmp_display_pllo_form($form_action, $form_id, $form_type, $submit_b
         );
         ?>               
     </div>
+    <div class="form-section">
+        <?php qsc_core_form_display_input_text(
+            "Prefix",
+            QSC_CMP_FORM_PLLO_PREFIX, 
+            array(
+                QSC_CORE_FORM_INPUT_HELP_ID => QSC_CMP_FORM_PLLO_PREFIX_HELP,
+                QSC_CORE_FORM_INPUT_HELP_TEXT => "Enter a custom display prefix (<em>e.g.</em>, COMP) with a maximum length of ".QSC_CMP_FORM_PLLO_PREFIX_MAX_LENGTH." characters. If none is specified, the prefix is derived from the plan code(s).",
+                QSC_CORE_FORM_INPUT_MAX_LENGTH => QSC_CMP_FORM_PLLO_PREFIX_MAX_LENGTH,
+                QSC_CORE_FORM_INPUT_VALUE => $pllo_prefix
+            )
+        );
+        ?>               
+    </div>                   
     <div class="form-section">
         <?php qsc_core_display_select_transfer_group(
             "Supports ILOs",

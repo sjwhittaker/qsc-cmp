@@ -66,6 +66,18 @@ else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_PLLO_FROM_ID) {
     // Get the PLLO
     $pllos_array = array($db_curriculum->getPLLOFromID($query_value));
 }
+else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_PLAN) {
+    // Extract the course ID from the input
+    $query_value = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_AJAX_INPUT_ID, FILTER_SANITIZE_NUMBER_INT);
+    if (! $query_value) {
+        error_log("No plan ID received by getPLLOs.php");
+        echo "";
+        exit;        
+    }
+    
+    // Prepare the value and get the PLLOs
+    $pllos_array = $db_curriculum->getPLLOsForPlan($query_value);
+}
 
 // Go through all the results and create the output with just the IDs
 // and names of the PLLOs

@@ -200,6 +200,11 @@ qsc_core_define_constant("QSC_CMP_FORM_PLLO_NUMBER", "pllo-number");
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_NUMBER_HELP", "pllo-number-help");
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_NUMBER_MAX_LENGTH", 15);
 
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_INPUT", "pllo-plan-input");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_INPUT_HELP", "pllo-plan-input-help");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_SELECT", "pllo-plan-select");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_SELECT_HELP", "pllo-plan-select-help");
+
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_PARENT_DLE_SELECT", "pllo-parent-dle-select");
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_PARENT_DLE_UNSELECT", "pllo-parent-dle-unselect");
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_PARENT_DLE_SELECT_HELP", "pllo-parent-dle-select-help");
@@ -213,6 +218,10 @@ qsc_core_define_constant("QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT_HELP", "pllo-pare
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_TEXT", "pllo-text");
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_TEXT_HELP", "pllo-text-help");
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_TEXT_MAX_LENGTH", 500);
+
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PREFIX", "pllo-prefix");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PREFIX_HELP", "pllo-prefix-help");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PREFIX_MAX_LENGTH", 10);
 
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_ILO_LIST_POSSIBLE", "pllo-ilo-list-possible");
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_ILO_LIST_POSSIBLE_HELP", "pllo-ilo-list-possible-help");
@@ -292,6 +301,7 @@ qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_FACULTY_FROM_ID", "getFacultyF
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_ILO_FROM_ID", "getILOFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PLAN_FROM_ID", "getPlanFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PLLO_FROM_ID", "getPLLOFromID");
+qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_PLAN", "getPLLOsForPlan");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PROGRAM_FROM_ID", "getProgramFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_REVISION_FROM_ID", "getRevisionFromID");
 

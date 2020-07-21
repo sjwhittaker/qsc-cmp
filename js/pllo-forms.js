@@ -33,10 +33,11 @@ const QSC_CMP_FORM_PLLO_DELETE = "#form-pllo-delete";
 const QSC_CMP_FORM_PLLO_ID = "#pllo-id";
 const QSC_CMP_FORM_PLLO_NUMBER = "#pllo-number";
 
+const QSC_CMP_FORM_PLLO_PLAN_INPUT = "#pllo-plan-input";
+const QSC_CMP_FORM_PLLO_PLAN_SELECT = "#pllo-plan-select";
+
 const QSC_CMP_FORM_PLLO_PARENT_DLE_SELECT = "#pllo-parent-dle-select";
 const QSC_CMP_FORM_PLLO_PARENT_DLE_UNSELECT = "#pllo-parent-dle-unselect";
-
-const QSC_CMP_FORM_PLLO_PARENT_PLLO_OR_DLE_HELP = "#pllo-parent-pllo-or-dle-help";
 
 const QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT = "#pllo-parent-pllo-select";
 const QSC_CMP_FORM_PLLO_PARENT_PLLO_UNSELECT = "#pllo-parent-pllo-unselect";
@@ -52,9 +53,80 @@ const QSC_CMP_FORM_PLLO_NOTES = "#pllo-notes";
 
 
 /******************************************************************************
+ * Functions
+ *****************************************************************************/
+function qscCMPPLLOHandlePlanInput() {
+    // Get the current value that the user's entered in the input box
+    let currentPlanValue = $(this).val();
+
+    // Prep the AJAX data
+    let ajaxData = {action: QSC_CMP_AJAX_ACTION_SEARCH_PLANS,
+        search: currentPlanValue
+    };
+    
+    // Get the select box that goes with the input box and remove all
+    // the current options
+    let planSelect = $(QSC_CMP_FORM_PLLO_PLAN_SELECT);
+    planSelect.find("option").remove();
+
+    qscCorePerformAJAXRequest(QSC_CMP_AJAX_SCRIPT_GET_PLANS, ajaxData,
+        function (jsonData) {
+            // Create new options from the JSON data and put them in the select
+            planSelect.append(qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name'));
+
+            // Did the update eliminate the previous selection? If so, remove
+            // all options from the PLLO list except "None".
+            let selectedPlan = planSelect.find("option:selected");
+            if (!selectedPlan.length) {
+                $(QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT).find("option").remove();
+            }
+        }
+    );    
+}
+
+function qscCMPPLLOHandlePlanSelection() {
+    // Get the current PLLO ID and the plan selection box
+    let currentPLLOID = $(QSC_CMP_FORM_PLLO_ID).val();
+    let planSelect = $(QSC_CMP_FORM_PLLO_PLAN_SELECT);
+
+    // Any change to the plan selection means removing the prior
+    // parent PLLO options
+    let parentPLLOSelect = $(QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT);
+    parentPLLOSelect.find("option").remove();
+
+    // Get the selected option from the list of plans and check that
+    // the change was to select, not unselect
+    let selectedPlan = planSelect.find("option:selected");
+    if (! selectedPlan.length) {
+        return;
+    }
+
+    // Prep the AJAX data
+    let ajaxData = {action: QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_PLAN,
+        id: selectedPlan.val()
+    };
+    
+    qscCorePerformAJAXRequest(QSC_CMP_AJAX_SCRIPT_GET_PLLOS, ajaxData,
+        function (jsonData) {
+            // Create new options from the JSON data and put them in the select
+            parentPLLOSelect.append(
+                qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name', currentPLLOID));
+        }
+    );
+}
+
+
+/******************************************************************************
  * Document - Ready
  *****************************************************************************/
 $(document).ready(function() {
+    // Handle the user editing the selected course
+    $(QSC_CMP_FORM_PLLO_PLAN_INPUT).keyup(qscCMPPLLOHandlePlanInput);
+    
+    // Handle the user changing the selected course, which must change
+    // the possible parent PLLO options
+    $(QSC_CMP_FORM_PLLO_PLAN_SELECT).change(qscCMPPLLOHandlePlanSelection);     
+    
     // Handle the user 'unselecting' the DLE because Ctrl + click
     // doesn't unselect an option in a single select box
     qscCoreUnselectWithButton(QSC_CMP_FORM_PLLO_PARENT_DLE_UNSELECT, 

@@ -35,21 +35,20 @@ qsc_cmp_start_html(array(QSC_CMP_START_HTML_TITLE => "View All DLEs"));
 
 $db_curriculum = new CMD();
 
-$dles_array = $db_curriculum->getAllDLEs();
+$dle_array = $db_curriculum->getAllDLEs();
 ?>
 
 <h1>All DLEs</h1>
 
-<?php if (empty($dles_array)) : ?>
+<?php if (empty($dle_array)) : ?>
 <p>There are presently no DLEs defined.</p>
-
-<?php else: ?>
-
-<ul>
-    <?php foreach ($dles_array as $dle) : ?>
-    <li><?= $dle->getAnchorToView(true); ?></li>
+<?php else: 
+    foreach ($dle_array as $dle) : ?>
+<section class="sub-section">
+    <h2><?= $dle->getAnchorToView(true); ?></h2>    
+        <?php qsc_cmp_display_pllo_table_for_dle($dle, $db_curriculum); ?>
+</section> <!-- .sub-section -->
     <?php endforeach; ?>
-</ul>
 <?php endif;
 
 qsc_cmp_end_html();

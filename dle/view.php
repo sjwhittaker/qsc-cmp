@@ -54,9 +54,6 @@ else:
     <?php qsc_core_log_and_display_error("A DLE with that ID could not be retrieved from the database.");
     else :
         qsc_cmp_start_html(array(QSC_CMP_START_HTML_TITLE => "View ".$dle->getName()));
-
-        // Get all of the direct PLLOs for this DLE
-        $pllo_array = $db_curriculum->getDirectPLLOsForDLE($dle_id);
 ?>
 
 <h1><?= $dle->getName();?></h1>
@@ -68,12 +65,8 @@ else:
         ); ?>
 
 <h2>Plan Level Learning Outcomes</h2>
-        <?php if (empty($pllo_array)) : ?>
-<p>There are no PLLOs set for this DLE.</p>
+        <?php qsc_cmp_display_pllo_table_for_dle($dle, $db_curriculum); ?>
     <?php
-        else :
-            qsc_cmp_display_pllo_table($pllo_array, $db_curriculum);
-        endif;
     endif;
 endif;
 

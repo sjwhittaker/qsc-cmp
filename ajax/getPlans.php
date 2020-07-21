@@ -39,7 +39,7 @@ if (! $ajax_action) {
 }
 
 $query_value = null;
-$plan_array = null;
+$plan_array = array();
 $db_curriculum = new CMD();
 $output_array = array();
 

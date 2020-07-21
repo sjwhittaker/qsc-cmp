@@ -853,6 +853,40 @@ class CurriculumMappingDatabase extends DatabaseManager {
     
     /**
      * 
+     * @param type $plloIDValue
+     * @return type
+     */
+    public function getPlansFromDLE($dleIDValue) {
+        $plan = self::TABLE_PLAN;
+        $planID = self::TABLE_PLAN_ID;
+        $planName = self::TABLE_PLAN_NAME;
+                
+        $pad = self::TABLE_PLLO_AND_DLE;
+        $padPLLOID = self::TABLE_PLLO_AND_DLE_PLLO_ID;
+        $padDLEID = self::TABLE_PLLO_AND_DLE_DLE_ID;
+        
+        $pllo = self::TABLE_PLLO;
+        $plloID = self::TABLE_PLLO_ID;
+
+        $pap = self::TABLE_PLAN_AND_PLLO;
+        $papPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
+        $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
+
+        
+        $query = "SELECT DISTINCT $plan.* FROM (SELECT * FROM $pad WHERE "
+                . "$pad.$padDLEID = ?) AS $pad JOIN $pllo ON $pad.$padPLLOID = $pllo.$plloID JOIN "
+                . "$pap ON $pllo.$plloID = $pap.$papPLLOID JOIN $plan on $pap.$papPlanID = "
+                . "$plan.$planID ORDER BY $plan.$planName ASC";
+        $resultPlans = $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($dleIDValue)), 
+            'Plan');
+        
+        return $resultPlans;        
+    }
+    
+    
+    /**
+     * 
      * @param type $departmentIDValue
      * @return type
      */
@@ -1008,7 +1042,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $departmentID = self::TABLE_DEPARTMENT_ID;
         $departmentCode = self::TABLE_DEPARTMENT_CODE;
         
-        $query = "SELECT DISTINCT $department.$departmentCode FROM (SELECT * FROM $pap WHERE $pap.$papPLLOID = ?) AS $pap JOIN (SELECT * FROM $dap WHERE $dap.role = 'Administrator') AS $dap ON $pap.$papPlanID = $dap.$dapPlanID JOIN $department ON $dap.$dapDepartmentID = $department.$departmentID ORDER BY $department.$departmentCode ASC";
+        $query = "SELECT DISTINCT $department.$departmentCode FROM (SELECT * FROM $pap WHERE $pap.$papPLLOID = ?) AS $pap JOIN (SELECT * FROM $dap WHERE $dap.role = 'Administrator') AS $dap ON $pap.$papPlanID = $dap.$dapPlanID JOIN (SELECT * FROM $department WHERE $department.$departmentCode IS NOT NULL) AS $department ON $dap.$dapDepartmentID = $department.$departmentID ORDER BY $department.$departmentCode ASC";
         $queryResult = $this->getQueryResults($query, array($plloIDValue));
         return self::extractValueFromDBRows($queryResult, $departmentCode);
     }
@@ -2150,7 +2184,62 @@ class CurriculumMappingDatabase extends DatabaseManager {
             $this->getQueryResults($query, array($idValue)),
             'PlanLevelLearningOutcome');
     }
+    
+    /**
+     * Extracts the PLLOs associated with an Plan.
+     *
+     * @param $idValue     The id of the Plan (string or numeric)
+     * @return             A array of all the PLLOs associated with the Plan
+     */
+    public function getPLLOsForPlan($idValue) {
+        $pllo = self::TABLE_PLLO;
+        $plloID = self::TABLE_PLLO_ID;
+        $plloNumber = self::TABLE_PLLO_NUMBER;
+
+        $pap = self::TABLE_PLAN_AND_PLLO;
+        $papPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
+        $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
+
+        $plan = self::TABLE_PLAN;
+        $planID = self::TABLE_PLAN_ID;
+
+        $query = "SELECT $pllo.* FROM $pllo JOIN (SELECT * FROM $pap WHERE $pap.$papPlanID = ?) AS $pap ON $pllo.$plloID = $pap.$papPLLOID JOIN $plan ON $plan.$planID = $pap.$papPlanID ORDER BY $pllo.$plloNumber ASC";
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($idValue)),
+            'PlanLevelLearningOutcome');
+    }    
+
+    /**
+     * Extracts the PLLOs associated with an Plan and DLE.
+     *
+     * @param $dleIDValue     The id of the DLE (string or numeric)
+     * @param $planIDValue    The id of the Plan (string or numeric)
+     * @return                A array of all the PLLOs associated with the DLE
+     *                        and Plan
+     */
+    public function getPLLOsForDLEAndPlan($dleIDValue, $planIDValue) {
+        $pllo = self::TABLE_PLLO;
+        $plloID = self::TABLE_PLLO_ID;
+        $plloNumber = self::TABLE_PLLO_NUMBER;
+
+        $pap = self::TABLE_PLAN_AND_PLLO;
+        $papPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
+        $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
+
+        $pad = self::TABLE_PLLO_AND_DLE;
+        $padDLEID = self::TABLE_PLLO_AND_DLE_DLE_ID;
+        $padPLLOID = self::TABLE_PLLO_AND_DLE_PLLO_ID;
         
+        $plan = self::TABLE_PLAN;
+        $planID = self::TABLE_PLAN_ID;
+
+        $query = "SELECT $pllo.* FROM $pllo JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON $pllo.$plloID = $pad.$padPLLOID JOIN (SELECT * FROM $pap WHERE $pap.$papPlanID = ?) AS $pap ON $pllo.$plloID = $pap.$papPLLOID JOIN $plan ON $plan.$planID = $pap.$papPlanID ORDER BY $pllo.$plloNumber ASC";
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($dleIDValue, $planIDValue)),
+            'PlanLevelLearningOutcome');
+    }    
+    
+    
     /**
      * 
      * @param type $dleIDValue

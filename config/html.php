@@ -668,7 +668,15 @@ function qsc_cmp_display_pllo_table($pllo_array, $db_curriculum) {
                 $plan_array = $db_curriculum->getPlansFromPLLO($pllo->getDBID());
                 $plan_anchor_array = qsc_core_map_member_function($plan_array, 'getAnchorToView'); ?>                        
             <tr>
-                <td><?= implode('<br/>', $plan_anchor_array); ?></td>
+                <td>
+                <?php if (! empty($plan_anchor_array)) : ?>
+                    <ul>
+                    <?php foreach ($plan_anchor_array as $plan_anchor) : ?>
+                        <li><?= $plan_anchor ?></li>
+                    <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+                </td>
                 <td><?= $pllo->getAnchorToView(); ?></td>
                 <td><?= $pllo->getText(); ?></td>
             </tr>
@@ -677,6 +685,99 @@ function qsc_cmp_display_pllo_table($pllo_array, $db_curriculum) {
     </table>        
 <?php
 }
+
+/**
+ *
+ * @param type $pllo_array
+ * @param type $dle
+ * @param type $db_curriculum
+ */
+function qsc_cmp_display_pllo_table_for_dle($dle, $db_curriculum) {
+    // Get all of the PLLOs directly associated with the given DLE
+    $pllo_array = $db_curriculum->getDirectPLLOsForDLE($dle->getDBID());    
+    if (empty($pllo_array)) { ?>
+        <p>There are no PLLOs associated with this DLE.</p>
+    <?php }
+    
+    // The PLLOs need to be grouped by plan(s) and then sorted by the plan(s)'
+    // names.
+    $INDEX_PLAN_ARRAY = 0;
+    $INDEX_PLLO_ARRAY = 1;
+    $PLAN_NAME_DELIMETER = '-';
+    $plans_and_pllos_3D_array = array();
+    
+    // Go through each PLLO
+    foreach ($pllo_array as $pllo) {
+        // Get the plan(s) for the PLLO
+        $plan_array = $db_curriculum->getPlansFromPLLO($pllo->getDBID());
+        
+        // Get the name(s) of the plan(s) and create the 'index'
+        $plan_name_array = qsc_core_map_member_function($plan_array, 'getName');
+        $plan_name_index = join($PLAN_NAME_DELIMETER, $plan_name_array);
+        
+        // Check to see if an entry already exists
+        if (! array_key_exists($plan_name_index, $plans_and_pllos_3D_array)) {
+            // If it doesn't, set everything up
+            $plans_and_pllos_3D_array[$plan_name_index] = array(
+                $INDEX_PLAN_ARRAY => $plan_array,
+                $INDEX_PLLO_ARRAY => array()); 
+        }
+        
+        // Add this PLLO to its group
+        $plans_and_pllos_3D_array[$plan_name_index][$INDEX_PLLO_ARRAY][] = $pllo;
+    }
+    
+    // Now that everything is organized, sort the keys
+    ksort($plans_and_pllos_3D_array, SORT_STRING);
+?>
+    <table>
+        <thead>
+            <tr>
+                <th>Plan(s)</th>
+                <th>PLLO</th>
+                <th>Text</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            foreach ($plans_and_pllos_3D_array as $plans_and_pllos_2D_array) : 
+                $current_plans_array = $plans_and_pllos_2D_array[$INDEX_PLAN_ARRAY];
+                $current_pllos_array = $plans_and_pllos_2D_array[$INDEX_PLLO_ARRAY];
+                
+                $current_plans_anchor_array = qsc_core_map_member_function($current_plans_array, 'getAnchorToView');
+                $number_of_current_plans = count($current_plans_array);
+                $number_of_current_pllos = count($current_pllos_array); 
+                ?>
+            <tr>
+                <td rowspan="<?= $number_of_current_pllos ?>">
+                <?php if ($number_of_current_plans == 1) : ?>
+                    <?= $current_plans_anchor_array[0] ?>
+                <?php elseif ($number_of_current_plans > 1) : ?>
+                    <ul>
+                    <?php foreach ($current_plans_anchor_array as $current_plans_anchor) : ?>
+                        <li><?= $current_plans_anchor ?></li>
+                    <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+                </td>
+                <?php // Note that $current_pllos_array must be nonempty for 
+                // the entry to exist
+                ?>
+                <td><?= $current_pllos_array[0]->getAnchorToView(); ?></td>
+                <td><?= $current_pllos_array[0]->getText(); ?></td>
+            </tr>
+                <?php for ($i = 1; $i < $number_of_current_pllos; $i++) : ?>
+            <tr>
+                <td><?= $current_pllos_array[$i]->getAnchorToView(); ?></td>
+                <td><?= $current_pllos_array[$i]->getText(); ?></td>
+            </tr>
+                <?php endfor; ?>
+            <?php endforeach; ?>
+        </tbody>
+    </table>        
+<?php
+}
+
 
 /**
  * 
