@@ -51,13 +51,12 @@ class CalendarCourse extends DatabaseObject {
         $coreq = $argArray[CCD::TABLE_COURSES_COREQ];
         $note = $argArray[CCD::TABLE_COURSES_NOTE];
         $exclusion = $argArray[CCD::TABLE_COURSES_EXCLUSION];
-        $reccomend = $argArray[CCD::TABLE_COURSES_RECCOMEND];
+        $reccomend = $argArray[CCD::TABLE_COURSES_RECOMMENDED];
         $oneWay = $argArray[CCD::TABLE_COURSES_ONEWAY];
         $learnHours = $argArray[CCD::TABLE_COURSES_LEARNING_HOURS];
         $equivalency = $argArray[CCD::TABLE_COURSES_EQUIVALENCY];
-        $website = $argArray[CCD::TABLE_COURSES_WEBSITE];
 
-        return new CalendarCourse($code, $name, $units, $description, $prereq, $coreq, $note, $exclusion, $reccomend, $oneWay, $learnHours, $equivalency, $website);
+        return new CalendarCourse($code, $name, $units, $description, $prereq, $coreq, $note, $exclusion, $reccomend, $oneWay, $learnHours, $equivalency);
     }
         
     /**
@@ -93,11 +92,10 @@ class CalendarCourse extends DatabaseObject {
     protected $coreq = null;
     protected $note = null;
     protected $exclusion = null;
-    protected $reccomend = null;
+    protected $recommended = null;
     protected $oneWay = null;
     protected $learnHours = null;
     protected $equivalency = null;
-    protected $website = null;
 
     
     /**************************************************************************
@@ -120,9 +118,8 @@ class CalendarCourse extends DatabaseObject {
      *                         null)
      * @param $argLearnHours   The course's learning hours (default is null)
      * @param $argEquivalency  The course's equivalency (default is null)
-     * @param $argWebsite      The course's website (default is null)
      */ 
-     public function __construct($argCode, $argName, $argUnits, $argDescription, $argPrereq = null, $argCoreq = null, $argNote = null, $argExclusion = null, $argReccomend = null, $argOneWay = null, $argLearnHours = null, $argEquivalency = null, $argWebsite = null) {
+     public function __construct($argCode, $argName, $argUnits, $argDescription, $argPrereq = null, $argCoreq = null, $argNote = null, $argExclusion = null, $argReccomend = null, $argOneWay = null, $argLearnHours = null, $argEquivalency = null) {
         parent::__construct($argCode);
 
         $this->name = $argName;
@@ -132,11 +129,10 @@ class CalendarCourse extends DatabaseObject {
         $this->coreq = $argCoreq;
         $this->note = $argNote;
         $this->exclusion = $argExclusion;
-        $this->reccomend = $argReccomend;
+        $this->recommended = $argReccomend;
         $this->oneWay = $argOneWay;
         $this->learnHours = $argLearnHours;
         $this->equivalency = $argEquivalency;
-        $this->website = $argWebsite;
         
         if (! is_float($this->units)) {
             $this->units = floatval($this->units);
@@ -221,7 +217,7 @@ class CalendarCourse extends DatabaseObject {
      * @return              The string recommendation
      */ 
     public function getRecommendation($noneOption = null) {
-        return qsc_core_get_none_if_empty($this->reccomend, $noneOption);   
+        return qsc_core_get_none_if_empty($this->recommended, $noneOption);   
     }       
 
     /** 
@@ -253,15 +249,5 @@ class CalendarCourse extends DatabaseObject {
     public function getEquivalency($noneOption = null) {
         return qsc_core_get_none_if_empty($this->equivalency, $noneOption);   
     }    
-     
-    /** 
-     * The get method for the course's website.
-     *
-     * @param $noneOption   What to return if the value is null
-     * @return              The string website
-     */ 
-    public function getWebsite($noneOption = null) {
-        return qsc_core_get_none_if_empty($this->website, $noneOption);   
-    }      
      
 }

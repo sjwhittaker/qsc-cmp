@@ -42,7 +42,7 @@ abstract class LearningOutcome extends DatabaseObject {
      */
     public static function getSortFunction() {
         return function($a, $b) { 
-                return strcmp($a->getNumber(), $b->getNumber());
+                return strcmp($a->getName(), $b->getName());
             };        
     }    
     

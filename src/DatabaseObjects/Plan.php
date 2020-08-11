@@ -92,24 +92,7 @@ class Plan extends CalendarComponent {
         return "$adminHTML$partnerHTML";
     }
     
-    /**
-     * 
-     * @param type $planArray
-     * @param type $dbCurriculum
-     */
-    public static function initializeAndSort(&$planArray, $dbCurriculum) {
-        foreach ($planArray as $plan) {
-            $plan->initialize($dbCurriculum);
-        }
-        
-        usort($planArray, 
-            function($a, $b) { 
-                return strcmp($a->getName(), $b->getName());            
-            }
-        );
-    }    
     
-
     /*************************************************************************
      * Member Variables
      *************************************************************************/

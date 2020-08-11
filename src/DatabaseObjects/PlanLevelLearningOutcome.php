@@ -35,6 +35,7 @@ class PlanLevelLearningOutcome extends LearningOutcome {
      * Constants
      **************************************************************************/
     public const DEFAULT_PREFIX = "PLLO";
+    
 
     /**************************************************************************
      * Static Functions
@@ -62,7 +63,7 @@ class PlanLevelLearningOutcome extends LearningOutcome {
 
         // These values are optional and can be null
         $notes = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_NOTES, FILTER_SANITIZE_STRING);
-        //$prefix = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_PREFIX, FILTER_SANITIZE_STRING);
+        $prefix = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_PREFIX, FILTER_SANITIZE_STRING);
         $parentDBID = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT, FILTER_SANITIZE_NUMBER_INT);
 
         return new PlanLevelLearningOutcome($id, $number, $text, $notes, $prefix, $parentDBID);
@@ -84,12 +85,21 @@ class PlanLevelLearningOutcome extends LearningOutcome {
         
         return new PlanLevelLearningOutcome($id, $number, $text, $notes, $prefix, $parentDBID);
     }
+
+    /**
+     * 
+     * @return boolean
+     */
+    public static function sortAfterInitialization() {
+        return true;
+    }
     
     
     /**************************************************************************
      * Member Variables
      **************************************************************************/
-    protected $prefix = null;    
+    protected $prefix = null;
+    protected $hasPrefix = false;
      
 
     /**************************************************************************
@@ -128,6 +138,7 @@ class PlanLevelLearningOutcome extends LearningOutcome {
         // If a unique prefix was defined for a PLLO in its row in the DB,
         // use it.
         if ($this->prefix) {
+            $this->hasPrefix = true;
             return;
         }
         
@@ -158,6 +169,14 @@ class PlanLevelLearningOutcome extends LearningOutcome {
     /**************************************************************************
      * Get and Set Methods
      **************************************************************************/
+    /**
+     * 
+     * @return type
+     */
+    public function hasCustomPrefix() {
+        return $this->hasPrefix;
+    }
+    
     /**
      * 
      * @return type
@@ -212,9 +231,23 @@ class PlanLevelLearningOutcome extends LearningOutcome {
      * @return                  An array of Revision objects
      */
     public function getRevisions($updatedPLLO, $userID, $dateAndTime, $tableName = CMD::TABLE_PLLO) {
-       // PLLOs have no additional member variables, so just return the
-       // results from the parent object.
-       return parent::getRevisions($updatedPLLO, $userID, $dateAndTime, $tableName);        
+       $revisionArray = parent::getRevisions($updatedPLLO, $userID, $dateAndTime, $tableName);        
+
+       // Go through each member variable and create a revision for each change
+       $thisPrefixValue = $this->hasCustomPrefix() ? $this->getPrefix() : null;
+       $updatedPLLOPrefixValue = $updatedPLLO->hasCustomPrefix() ? $updatedPLLO->getPrefix() : null;
+       
+       if ($thisPrefixValue != $updatedPLLOPrefixValue) {
+           $revisionArray[] = new Revision(
+               DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
+               CMD::TABLE_PLLO, CMD::TABLE_PLLO_PREFIX,
+               array(CMD::TABLE_PLLO_ID => $this->getDBID()),
+               CMD::TABLE_REVISION_ACTION_EDITED, $thisPrefixValue,
+               $dateAndTime, $updatedPLLOPrefixValue
+           );
+       }
+       
+       return $revisionArray;       
     }
     
     /**

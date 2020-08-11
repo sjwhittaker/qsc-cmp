@@ -55,11 +55,11 @@ class PLLOAndILO extends BiRelationship {
     /** 
      * This constructor sets all of the member variables using the arguments.
      *
-     * @param type $argPCMDBID
-     * @param type $argICMDBID
+     * @param type $argPLLODBID
+     * @param type $argILODBID
      */
-    public function __construct($argPCMDBID, $argICMDBID) {
-        parent::__construct($argPCMDBID, $argICMDBID);
+    public function __construct($argPLLODBID, $argILODBID) {
+        parent::__construct($argPLLODBID, $argILODBID);
     }
 
      
@@ -71,7 +71,7 @@ class PLLOAndILO extends BiRelationship {
      *
      * @return      The string ID
      */ 
-    public function getPCMDBID() {
+    public function getPLLODBID() {
         return $this->firstDBID;   
     } 
 
@@ -80,7 +80,7 @@ class PLLOAndILO extends BiRelationship {
      *
      * @return      The string ID
      */ 
-    public function getICMDBID() {
+    public function getILODBID() {
         return $this->secondDBID;   
     } 
 

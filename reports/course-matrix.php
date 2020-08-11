@@ -117,8 +117,8 @@ $dles_array = $db_curriculum->getAllDLEs();
                         <a class="tooltip-popup-title" href="<?= $course->getLinkToView(); ?>"><?= $course->getName(); ?></a>
                         <ul>
                         <?php foreach ($cllos_and_pllos_array as $cllo_and_pllo) :                            
-                            $cllo = $db_curriculum->getCLLOFromID($cllo_and_pllo->getCCMDBID());                            
-                            $pllo = $db_curriculum->getPLLOFromID($cllo_and_pllo->getPCMDBID());
+                            $cllo = $db_curriculum->getCLLOFromID($cllo_and_pllo->getCLLODBID());                            
+                            $pllo = $db_curriculum->getPLLOFromID($cllo_and_pllo->getPLLODBID());
                         ?>
                             <li>
                                 <?= $cllo->getAnchorToView(); ?>

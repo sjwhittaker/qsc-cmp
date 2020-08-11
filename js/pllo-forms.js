@@ -34,7 +34,10 @@ const QSC_CMP_FORM_PLLO_ID = "#pllo-id";
 const QSC_CMP_FORM_PLLO_NUMBER = "#pllo-number";
 
 const QSC_CMP_FORM_PLLO_PLAN_INPUT = "#pllo-plan-input";
-const QSC_CMP_FORM_PLLO_PLAN_SELECT = "#pllo-plan-select";
+const QSC_CMP_FORM_PLLO_PLAN_LIST_POSSIBLE = "#pllo-plan-list-possible";
+const QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED = "#pllo-plan-list-supported";
+const QSC_CMP_FORM_PLLO_PLAN_ADD = "#pllo-plan-add";
+const QSC_CMP_FORM_PLLO_PLAN_REMOVE = "#pllo-plan-remove";
 
 const QSC_CMP_FORM_PLLO_PARENT_DLE_SELECT = "#pllo-parent-dle-select";
 const QSC_CMP_FORM_PLLO_PARENT_DLE_UNSELECT = "#pllo-parent-dle-unselect";
@@ -60,57 +63,69 @@ function qscCMPPLLOHandlePlanInput() {
     let currentPlanValue = $(this).val();
 
     // Prep the AJAX data
-    let ajaxData = {action: QSC_CMP_AJAX_ACTION_SEARCH_PLANS,
+    let ajaxData = {action: QSC_CMP_AJAX_ACTION_SEARCH_PLANS_FOR_PLLOS,
         search: currentPlanValue
     };
     
-    // Get the select box that goes with the input box and remove all
-    // the current options
-    let planSelect = $(QSC_CMP_FORM_PLLO_PLAN_SELECT);
-    planSelect.find("option").remove();
+    // Get the select boxes for the 'possible' and supported lists
+    let possiblePlansSelect = $(QSC_CMP_FORM_PLLO_PLAN_LIST_POSSIBLE);
+    let supportedPlansSelect = $(QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED);
+
+    // Remove all of the current possible options
+    possiblePlansSelect.find("option").remove();
 
     qscCorePerformAJAXRequest(QSC_CMP_AJAX_SCRIPT_GET_PLANS, ajaxData,
         function (jsonData) {
             // Create new options from the JSON data and put them in the select
-            planSelect.append(qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name'));
+            possiblePlansSelect.append(qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name'));
 
-            // Did the update eliminate the previous selection? If so, remove
-            // all options from the PLLO list except "None".
-            let selectedPlan = planSelect.find("option:selected");
-            if (!selectedPlan.length) {
-                $(QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT).find("option").remove();
-            }
+            // Go through the supported options and remove those in the
+            // possible list            
+            supportedPlansSelect.find("option").each(function() {
+                let supportedID = $(this).val();
+                possiblePlansSelect.find('option[value="' + supportedID + '"').remove();
+            });            
         }
     );    
 }
 
-function qscCMPPLLOHandlePlanSelection() {
-    // Get the current PLLO ID and the plan selection box
-    let currentPLLOID = $(QSC_CMP_FORM_PLLO_ID).val();
-    let planSelect = $(QSC_CMP_FORM_PLLO_PLAN_SELECT);
+function qscCMPPLLOHandlePlanAdditionAndRemoval() {
+    // NOTE: this function is called *after* the option has been moved; all
+    // that remains is to update the PLLOs
 
-    // Any change to the plan selection means removing the prior
-    // parent PLLO options
+    // Get the ID of the current PLLO
+    let currentPLLOID = $(QSC_CMP_FORM_PLLO_ID).val();
+    
+    // Get the currently selected plans in the 'supported' box
+    let supportedPlansSelect = $(QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED);
+    let supportedPlanArray = supportedPlansSelect.find("option");
+    let supportedPlanIDArray = [];
+    
+    // Get the IDs for the plans
+    supportedPlanArray.each(function() {
+        supportedPlanIDArray.push($(this).val());
+    });
+
+    // Remove the existing parent PLLO options
     let parentPLLOSelect = $(QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT);
     parentPLLOSelect.find("option").remove();
 
-    // Get the selected option from the list of plans and check that
-    // the change was to select, not unselect
-    let selectedPlan = planSelect.find("option:selected");
-    if (! selectedPlan.length) {
-        return;
-    }
-
     // Prep the AJAX data
-    let ajaxData = {action: QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_PLAN,
-        id: selectedPlan.val()
+    let ajaxData = {action: QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_PLANS,
+        id: supportedPlanIDArray,
+        exclude: [currentPLLOID]
     };
-    
+        
+    // Put the PLLOs in the list of options
     qscCorePerformAJAXRequest(QSC_CMP_AJAX_SCRIPT_GET_PLLOS, ajaxData,
         function (jsonData) {
             // Create new options from the JSON data and put them in the select
             parentPLLOSelect.append(
-                qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name', currentPLLOID));
+                qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name'));
+
+            // Remove the current PLLO ID, if it was a match
+            // Now done in query
+            //parentPLLOSelect.find('option[value="' + currentPLLOID + '"]').remove();
         }
     );
 }
@@ -120,12 +135,20 @@ function qscCMPPLLOHandlePlanSelection() {
  * Document - Ready
  *****************************************************************************/
 $(document).ready(function() {
-    // Handle the user editing the selected course
+    // Handle the user searching for plans
     $(QSC_CMP_FORM_PLLO_PLAN_INPUT).keyup(qscCMPPLLOHandlePlanInput);
     
-    // Handle the user changing the selected course, which must change
-    // the possible parent PLLO options
-    $(QSC_CMP_FORM_PLLO_PLAN_SELECT).change(qscCMPPLLOHandlePlanSelection);     
+    // Handle the user selecting the '>>' and '<<' buttons to move plans
+    // back and forth, i8ncluding altering the PLLOs
+    qscCoreTransferOptionOnClick(QSC_CMP_FORM_PLLO_PLAN_ADD,
+        QSC_CMP_FORM_PLLO_PLAN_LIST_POSSIBLE, 
+        QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED);
+    qscCoreTransferOptionOnClick(QSC_CMP_FORM_PLLO_PLAN_REMOVE,
+        QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED, 
+        QSC_CMP_FORM_PLLO_PLAN_LIST_POSSIBLE);
+        
+    $(QSC_CMP_FORM_PLLO_PLAN_ADD).click(qscCMPPLLOHandlePlanAdditionAndRemoval);
+    $(QSC_CMP_FORM_PLLO_PLAN_REMOVE).click(qscCMPPLLOHandlePlanAdditionAndRemoval);
     
     // Handle the user 'unselecting' the DLE because Ctrl + click
     // doesn't unselect an option in a single select box
@@ -141,8 +164,8 @@ $(document).ready(function() {
     qscCoreUnselectOnChange(QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT,
         QSC_CMP_FORM_PLLO_PARENT_DLE_SELECT);
         
-    // Handle the user selecting the '>>' and '<<' buttons to move PLLOs
-    // and ILOs back and forth
+    // Handle the user selecting the '>>' and '<<' buttons to move ILOs 
+    // back and forth
     qscCoreTransferOptionOnClick(QSC_CMP_FORM_PLLO_ILO_ADD,
         QSC_CMP_FORM_PLLO_ILO_LIST_POSSIBLE, 
         QSC_CMP_FORM_PLLO_ILO_LIST_SUPPORTED);
@@ -152,6 +175,14 @@ $(document).ready(function() {
     
     // Handle form submission for add and edit
     $(QSC_CMP_FORM_PLLO_ADD + ", " + QSC_CMP_FORM_PLLO_EDIT).submit(function(event) {            
+        // At least one plan must be selected
+        let plansSelected = $(QSC_CMP_FORM_PLLO_PLAN_LIST_POSSIBLE + ' option').length;        
+        if (plansSelected === 0) {
+            // To Do: figure out an accessible way to communicate the problem
+            event.preventDefault();
+            return;
+        }
+        
         // Either a DLE or parent PLLO must be selected
         let dleSelected = $(QSC_CMP_FORM_PLLO_PARENT_DLE_SELECT + ' option:selected').length;
         let parentPLLOSelected = $(QSC_CMP_FORM_PLLO_PARENT_PLLO_SELECT + ' option:selected').length;
@@ -162,10 +193,11 @@ $(document).ready(function() {
             return;
         }
         
-        // Select all of the options in the supported ILOs list so they 
-        // // appear in $_POST
+        // Select all of the options in the supported plan and ILO lists so they 
+        // appear in $_POST
+        qscCoreSelectAllOptions(QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED);
         qscCoreSelectAllOptions(QSC_CMP_FORM_PLLO_ILO_LIST_SUPPORTED);
-                
+        
         // Set the flag that JS is working
         qscCMPSetJSCompletedOnSubmission(); 
     });

@@ -42,7 +42,6 @@ if (! function_exists("qsc_cmp_log_user_in")) {
         // Attempt #1: check for local development and log in with the constants
         if (QSC_CMP_LOCAL_DEVELOPMENT) {
             $login_time = date(QSC_CORE_DATE_AND_TIME_FORMAT);
-            
             SessionManager::userLogin(QSC_CMP_LOCAL_DEVELOPMENT_USER_ID, 
                 QSC_CMP_LOCAL_DEVELOPMENT_USER_FIRST_NAME, 
                 QSC_CMP_LOCAL_DEVELOPMENT_USER_LAST_NAME, 
@@ -186,6 +185,9 @@ function qsc_cmp_extract_form_option_data($db_object_array) {
         $text = "";
         if (method_exists($db_object, "getShortSnippet")) {
             $text = $db_object->getShortSnippet();
+        }
+        elseif (method_exists($db_object, "getName")) {
+            $text = $db_object->getName();
         }
         
         $option_data_array[$id] = $text;

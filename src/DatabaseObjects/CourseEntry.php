@@ -50,8 +50,9 @@ class CourseEntry extends DatabaseObject {
         $id = $argArray[CMD::TABLE_COURSE_ID];
         $subject = $argArray[CMD::TABLE_COURSE_SUBJECT];
         $number = $argArray[CMD::TABLE_COURSE_NUMBER];
+        $notes = $argArray[CMD::TABLE_COURSE_NOTES];
          
-        return new CourseEntry($id, $subject, $number);
+        return new CourseEntry($id, $subject, $number, $notes);
     }
     
     /**
@@ -70,8 +71,9 @@ class CourseEntry extends DatabaseObject {
     /**************************************************************************
      * Member Variables
      **************************************************************************/
-     protected $subject = null;
-     protected $number = null;
+    protected $subject = null;
+    protected $number = null;
+    protected $notes = null;
      
  
     /**************************************************************************
@@ -83,13 +85,15 @@ class CourseEntry extends DatabaseObject {
      * @param $argDBID         The course's database integer ID
      * @param $argSubject      The course's string subject
      * @param $argNumber       The course's string 'number'
+     * @param $argNotes        The course's string notes
      */ 
-     public function __construct($argDBID, $argSubject, $argNumber) {
-         parent::__construct($argDBID);
+    public function __construct($argDBID, $argSubject, $argNumber, $argNotes) {
+        parent::__construct($argDBID);
          
-         $this->subject = $argSubject;
-         $this->number = $argNumber;
-     }
+        $this->subject = $argSubject;
+        $this->number = $argNumber;
+        $this->notes = $argNotes;
+    }
 
      
     /**************************************************************************
@@ -104,15 +108,23 @@ class CourseEntry extends DatabaseObject {
         return $this->subject;
     }
     
+    /** 
+     * The get method for the course's notes.
+     *
+     * @return  The string notes
+     */ 
+    public function getNotes($noneOption = null) {
+        return qsc_core_get_none_if_empty($this->notes, $noneOption);
+    }        
     
     /** 
      * The get method for the course's number.
      *
      * @return  The string 'number'
      */ 
-     public function getNumber() {
+    public function getNumber() {
         return $this->number;   
-     } 
+    } 
      
     /** 
      * The get method for the course's name, which includes the subject followed
@@ -144,8 +156,7 @@ class CourseEntry extends DatabaseObject {
     public function getLinkToView() {
         return self::getLinkWithID(QSC_CMP_COURSE_VIEW_PAGE_LINK);
     }
-    
-    
+        
     /**
      * Creates the key for the corresponding course in the course calendar 
      * database, which is the subject followed by the number.

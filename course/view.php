@@ -93,7 +93,10 @@ else:
 <div class="row">
         <?php foreach ($course_entry_array as $course_entry) : 
             $calendar_course = $db_calendar->getCourseFromID($course_entry->getCalendarCourseDBID());
-            $calendar_course_name = ($calendar_course) ? $calendar_course->getName() : '';?>
+            $calendar_course_name = ($calendar_course) ? $calendar_course->getName() : '';
+            
+            $departmental_notes = $course_entry->getNotes();
+            ?>
     <div class="col-lg-<?= $column_span; ?>">
         <?php if ($is_cross_referenced) : ?><h3 class="cross-referenced-course-name"><?= $course_entry->getName(); ?><?= ($calendar_course_name) ? ': '.$calendar_course_name : ''; ?></h3><?php endif; ?>
             <?php if (! $calendar_course) : ?>    
@@ -106,7 +109,7 @@ else:
                 "Learning Hours" => $calendar_course->getLearningHours(),
                 "Prerequisites" => $calendar_course->getPrerequisites(QSC_CMP_TEXT_NONE_SPECIFIED),
                 "Corequisites" => $calendar_course->getCorequisites(QSC_CMP_TEXT_NONE_SPECIFIED),
-                "Note" => $calendar_course->getNote(QSC_CMP_TEXT_NONE_SPECIFIED),
+                "Calendar Note" => $calendar_course->getNote(QSC_CMP_TEXT_NONE_SPECIFIED),
                 "Exclusion(s)" => $calendar_course->getExclusions(QSC_CMP_TEXT_NONE_SPECIFIED),
                 "One Way Exclusion(s)" => $calendar_course->getOneWayExclusion(QSC_CMP_TEXT_NONE_SPECIFIED),
                 "Recommendation" => $calendar_course->getRecommendation(QSC_CMP_TEXT_NONE_SPECIFIED),
@@ -114,6 +117,10 @@ else:
                 ),
                 ($column_span < 12)
             ); ?>    
+            <?php endif; ?>
+            <?php if ($departmental_notes) : ?>
+        <h3>Departmental Notes</h3>
+        <p><?= $departmental_notes ?></p>
             <?php endif; ?>
     </div>
         <?php endforeach; ?>

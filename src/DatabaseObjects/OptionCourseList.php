@@ -30,7 +30,19 @@ use Managers\CurriculumMappingDatabase as CMD;
 /**
  * The class CourseList represents a course list as stored in the database.
  */
-class OptionCourseList extends CourseList {        
+class OptionCourseList extends CourseList {
+    /**************************************************************************
+     * Static Functions
+     **************************************************************************/    
+    /**
+     * 
+     * @return boolean
+     */
+    public static function sortAfterInitialization() {
+        return true;
+    }
+    
+    
     /*************************************************************************
      * Initialize
      *************************************************************************/

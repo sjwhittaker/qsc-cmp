@@ -54,11 +54,11 @@ class CLLOAndILO extends BiRelationship {
     /** 
      * This constructor sets all of the member variables using the arguments.
      * 
-     * @param type $argCCMDBID
-     * @param type $argICMDBID
+     * @param type $argCLLODBID
+     * @param type $argILODBID
      */     
-    public function __construct($argCCMDBID, $argICMDBID) {
-        parent::__construct($argCCMDBID, $argICMDBID);
+    public function __construct($argCLLODBID, $argILODBID) {
+        parent::__construct($argCLLODBID, $argILODBID);
     }
 
      
@@ -70,7 +70,7 @@ class CLLOAndILO extends BiRelationship {
      *
      * @return      The string ID
      */ 
-    public function getCCMDBID() {
+    public function getCLLODBID() {
         return $this->firstDBID;   
     } 
 

@@ -35,6 +35,18 @@ use Managers\CurriculumMappingDatabase as CMD;
  */
 class RelationshipCourseList extends CourseList {        
     /**************************************************************************
+     * Static Functions
+     **************************************************************************/    
+    /**
+     * 
+     * @return boolean
+     */
+    public static function sortAfterInitialization() {
+        return true;
+    }
+
+    
+    /**************************************************************************
      * Member Variables
      **************************************************************************/
     protected $relationship = null;  

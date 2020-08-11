@@ -386,6 +386,16 @@ class Revision extends DatabaseObject {
                 $secondFallback = "ILO (ID " . $this->primaryKey[
                         CMD::TABLE_PLLO_AND_ILO_ILO_ID] . ")";
                 break;
+            case CMD::TABLE_PLAN_AND_PLLO:
+                $firstElement = $db_curriculum->getPLLOFromID(
+                        $this->primaryKey[CMD::TABLE_PLAN_AND_PLLO_PLLO_ID]);
+                $firstFallback = "PLLO (ID " . $this->primaryKey[
+                        CMD::TABLE_PLAN_AND_PLLO_PLLO_ID] . ")";
+                $secondElement = $db_curriculum->getPlanFromID(
+                        $this->primaryKey[CMD::TABLE_PLAN_AND_PLLO_PLAN_ID]);
+                $secondFallback = "Plan (ID " . $this->primaryKey[
+                        CMD::TABLE_PLAN_AND_PLLO_PLAN_ID] . ")";
+                break;
             default:
                 break;
         }

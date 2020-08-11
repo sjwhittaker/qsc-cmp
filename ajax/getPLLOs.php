@@ -66,17 +66,23 @@ else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_PLLO_FROM_ID) {
     // Get the PLLO
     $pllos_array = array($db_curriculum->getPLLOFromID($query_value));
 }
-else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_PLAN) {
-    // Extract the course ID from the input
-    $query_value = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_AJAX_INPUT_ID, FILTER_SANITIZE_NUMBER_INT);
-    if (! $query_value) {
-        error_log("No plan ID received by getPLLOs.php");
+else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_PLANS) {
+    // Extract the PLLO ID array from the input
+    $query_id_array = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_AJAX_INPUT_ID, FILTER_SANITIZE_NUMBER_INT);
+    $query_exclude_array = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_AJAX_INPUT_EXCLUDE, FILTER_SANITIZE_NUMBER_INT);
+    
+    foreach ($query_exclude_array as $id) {
+        error_log($id);
+    }
+    
+    if (! $query_id_array) {
+        error_log("No plan ID array was received by getPLLOs.php");
         echo "";
         exit;        
     }
     
     // Prepare the value and get the PLLOs
-    $pllos_array = $db_curriculum->getPLLOsForPlan($query_value);
+    $pllos_array = $db_curriculum->getPLLOsForPlans($query_id_array, $query_exclude_array);
 }
 
 // Go through all the results and create the output with just the IDs

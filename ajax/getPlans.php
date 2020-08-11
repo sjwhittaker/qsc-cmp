@@ -54,6 +54,19 @@ if ($ajax_action == QSC_CMP_AJAX_ACTION_SEARCH_PLANS) {
     // Perform the search
     $plan_array = $db_curriculum->findMatchingPlans($query_value);
 }
+else if ($ajax_action == QSC_CMP_AJAX_ACTION_SEARCH_PLANS_FOR_PLLOS) {
+    // Extract the search string from the input
+    $query_search_value = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_AJAX_INPUT_SEARCH, FILTER_SANITIZE_STRING);
+    $query_exclude_array = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_AJAX_INPUT_EXCLUDE, FILTER_SANITIZE_NUMBER_INT);    
+    if (! $query_search_value) {
+        echo "";
+        exit;        
+    }
+    
+    // Perform the search
+    $plan_array = $db_curriculum->findMatchingPlans($query_search_value, 
+        array(CMD::TABLE_PLAN_NAME, CMD::TABLE_PLAN_CODE), $query_exclude_array);
+}
 else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_PLAN_FROM_ID) {
     // Extract the plan ID from the input
     $query_value = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_AJAX_INPUT_ID, FILTER_SANITIZE_NUMBER_INT);

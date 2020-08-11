@@ -202,8 +202,13 @@ qsc_core_define_constant("QSC_CMP_FORM_PLLO_NUMBER_MAX_LENGTH", 15);
 
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_INPUT", "pllo-plan-input");
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_INPUT_HELP", "pllo-plan-input-help");
-qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_SELECT", "pllo-plan-select");
-qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_SELECT_HELP", "pllo-plan-select-help");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_LIST_POSSIBLE", "pllo-plan-list-possible");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_LIST_POSSIBLE_HELP", "pllo-plan-list-possible-help");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED", "pllo-plan-list-supported");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED_HELP", "pllo-plan-list-supported-help");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_ADD", "pllo-plan-add");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_REMOVE", "pllo-plan-remove");
+qsc_core_define_constant("QSC_CMP_FORM_PLLO_PLAN_HELP", "pllo-plan-help");
 
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_PARENT_DLE_SELECT", "pllo-parent-dle-select");
 qsc_core_define_constant("QSC_CMP_FORM_PLLO_PARENT_DLE_UNSELECT", "pllo-parent-dle-unselect");
@@ -287,6 +292,7 @@ qsc_core_define_constant("QSC_CMP_AJAX_ACTION_SEARCH_DLES", "searchDLEs");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_SEARCH_FACULTIES", "searchFaculties");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_SEARCH_ILOS", "searchILOs");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_SEARCH_PLANS", "searchPlans");
+qsc_core_define_constant("QSC_CMP_AJAX_ACTION_SEARCH_PLANS_FOR_PLLOS", "searchPlansForPLLOs");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_SEARCH_PLLOS", "searchPLLOs");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_SEARCH_PROGRAMS", "searchPrograms");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_SEARCH_REVISIONS", "searchRevisions");
@@ -302,11 +308,13 @@ qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_ILO_FROM_ID", "getILOFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PLAN_FROM_ID", "getPlanFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PLLO_FROM_ID", "getPLLOFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_PLAN", "getPLLOsForPlan");
+qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_PLANS", "getPLLOsForPlans");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PROGRAM_FROM_ID", "getProgramFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_REVISION_FROM_ID", "getRevisionFromID");
 
 qsc_core_define_constant("QSC_CMP_AJAX_INPUT_ID", "id");
 qsc_core_define_constant("QSC_CMP_AJAX_INPUT_SEARCH", "search");
+qsc_core_define_constant("QSC_CMP_AJAX_INPUT_EXCLUDE", "exclude");
 
 qsc_core_define_constant("QSC_CMP_AJAX_OUTPUT_ID", "id");
 qsc_core_define_constant("QSC_CMP_AJAX_OUTPUT_NAME", "name");

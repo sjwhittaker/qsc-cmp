@@ -141,8 +141,8 @@ else:
                     <a class="tooltip-popup-title" href="<?= $course_subset[$course_index]->getLinkToView(); ?>"><?= $course_subset[$course_index]->getName(); ?></a>
                     <ul>
                             <?php foreach ($cllo_and_pllo_array as $cllo_and_pllo) :
-                                $cllo = $db_curriculum->getCLLOFromID($cllo_and_pllo->getCCMDBID());                            
-                                $pllo = $db_curriculum->getPLLOFromID($cllo_and_pllo->getPCMDBID());
+                                $cllo = $db_curriculum->getCLLOFromID($cllo_and_pllo->getCLLODBID());                            
+                                $pllo = $db_curriculum->getPLLOFromID($cllo_and_pllo->getPLLODBID());
                         ?>
                         <li><?= $cllo->getAnchorToView(); ?>
                             <i class="fas fa-arrow-right" aria-hidden="true" title="supports"></i>

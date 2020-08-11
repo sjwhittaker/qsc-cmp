@@ -119,7 +119,7 @@ else:
         ); ?>
 
 <h2>Plans</h2>
-        <?php if (empty($cllo_array)) : ?>
+        <?php if (empty($plan_array)) : ?>
     <p>This PLLO is not associated with any plans.</p>
         <?php
         else :

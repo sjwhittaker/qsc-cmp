@@ -291,4 +291,18 @@ class Course {
         
         return $anchor;
     }
+    
+    /**
+     * 
+     * @param type $subject
+     */
+    public function getCourseEntryWithSubject($subject) {
+        foreach ($this->courseEntryArray as $courseEntry) {
+            if ($courseEntry->getSubject() == $subject) {
+                return $courseEntry;
+            }
+        }
+        
+        return null;
+    }
 }

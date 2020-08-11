@@ -41,6 +41,7 @@ use DatabaseObjects\Faculty;
 use DatabaseObjects\InstitutionLearningOutcome as ILO;
 use DatabaseObjects\OptionCourseList;
 use DatabaseObjects\Plan;
+use DatabaseObjects\PlanAndPLLO;
 use DatabaseObjects\PlanLevelLearningOutcome as PLLO;
 use DatabaseObjects\PLLOAndDLE;
 use DatabaseObjects\PLLOAndILO;
@@ -96,6 +97,8 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_COURSE_SUBJECT_MAX_LENGTH = 10;
     public const TABLE_COURSE_NUMBER = "number";
     public const TABLE_COURSE_NUMBER_MAX_LENGTH = 10;
+    public const TABLE_COURSE_NOTES = "notes";
+    public const TABLE_COURSE_NOTES_MAX_LENGTH = 500;
     
     public const TABLE_COURSELIST = "courselist";
     public const TABLE_COURSELIST_ID = "id";
@@ -626,7 +629,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 $objectType, $initializeDefaultArgArray);
         }
         
-        if (! empty($dbObjectArray)) {
+        $sortAfterInitialization = call_user_func('\\DatabaseObjects\\'.$objectType."::sortAfterInitialization");
+        
+        if ((! empty($dbObjectArray)) && $sortAfterInitialization) {
             usort($dbObjectArray, 
                 call_user_func('\\DatabaseObjects\\'.$objectType."::getSortFunction"));
         }
@@ -2179,7 +2184,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $dle = self::TABLE_DLE;
         $dleID = self::TABLE_DLE_ID;
 
-        $query = "SELECT DISTINCT $pllo.* FROM $pllo JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON $pllo.$plloID = $pad.$padPLLOID JOIN $dle ON $dle.$dleID = $pad.$padDLEID ORDER BY $pllo.$plloNumber ASC";
+        $query = "SELECT DISTINCT $pllo.* FROM $pllo JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON $pllo.$plloID = $pad.$padPLLOID ORDER BY $pllo.$plloNumber ASC";
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($idValue)),
             'PlanLevelLearningOutcome');
@@ -2207,7 +2212,44 @@ class CurriculumMappingDatabase extends DatabaseManager {
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($idValue)),
             'PlanLevelLearningOutcome');
-    }    
+    }
+    
+    /**
+     * Extracts the PLLOs associated with multiple Plans.
+     *
+     * @param $idValueArray     The ids of the Plan (string or numeric)
+     * @return                  A array of all the PLLOs associated with the 
+     *                          Plans
+     */
+    public function getPLLOsForPlans($idValueArray, $excludePLLOIDValueArray = array()) {
+        $pllo = self::TABLE_PLLO;
+        $plloID = self::TABLE_PLLO_ID;
+        $plloNumber = self::TABLE_PLLO_NUMBER;
+
+        $pap = self::TABLE_PLAN_AND_PLLO;
+        $papPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
+        $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
+
+        $plan = self::TABLE_PLAN;
+        $planID = self::TABLE_PLAN_ID;
+        
+        $planIDString = self::getQuestionMarkString($idValueArray);
+        $excludePLLOIDString = self::getQuestionMarkString($excludePLLOIDValueArray);
+
+        $query = "SELECT DISTINCT $pllo.* FROM ";
+        if (empty($excludePLLOIDValueArray)) {
+            $query .= "$pllo";            
+        }
+        else {
+            $query .= "(SELECT * FROM $pllo WHERE $pllo.$plloID NOT IN $excludePLLOIDString) AS $pllo";                        
+        }
+        $query .= " JOIN (SELECT * FROM $pap WHERE $pap.$papPlanID IN $planIDString) AS $pap ON $pllo.$plloID = $pap.$papPLLOID JOIN $plan ON $plan.$planID = $pap.$papPlanID ORDER BY $pllo.$plloNumber ASC";
+                
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array_merge($excludePLLOIDValueArray, $idValueArray)),
+            'PlanLevelLearningOutcome'
+        );
+    }     
 
     /**
      * Extracts the PLLOs associated with an Plan and DLE.
@@ -2399,25 +2441,72 @@ class CurriculumMappingDatabase extends DatabaseManager {
         return Course::buildCoursesFromCourseEntries($courseEntryArray);
        
     }
+    
+    /**
+     * 
+     * @param type $objectName
+     * @param type $searchString
+     * @param type $tableName
+     * @param type $searchColumnArray
+     * @param type $orderByColumnArray
+     * @return type
+     */
+    protected function findMatchingObjects($objectName, $searchString, 
+            $tableName, $searchColumnArray, $orderByColumnArray, 
+            $idColumn = null, $excludeIDArray = array()) {
+        
+        // Check that there are search columns before proceeding
+        if (empty($searchColumnArray)) {
+            return array();            
+        }
+        
+        // Format the string for the query and create the individual LIKE parts
+        $likeString = "%{$searchString}%";
+        $likeStringArray = array_fill(0, count($searchColumnArray), $likeString);
+        $searchClauseArray = array_map(function($searchColumn) {
+                return "($searchColumn LIKE ?)";
+            }, $searchColumnArray);
+            
+        // Create the main part of the query to search each column
+        $query = "SELECT * FROM $tableName WHERE (";
+        $query .= join(' OR ', $searchClauseArray).")";
 
+        // Check whether any ids should be excluded
+        if (($idColumn !== null) && (! empty($excludeIDArray))) {
+            $query .= " AND $idColumn NOT IN ";
+            $query .= self::getQuestionMarkString($excludeIDArray);
+        }        
+        
+        $query .= " ORDER BY ".join(', ', $orderByColumnArray)." ASC";
+        //error_log($query);        
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array_merge($likeStringArray, $excludeIDArray)),
+            $objectName);        
+    }
+    
     /**
      * Searches in the database for CLLOs whose number, text or notes contain the
      * given string.
      *
      * @param $searchString        The substring to look for
+     * @param type $searchColumnArray
+     * @param type $excludeIDArray
      * @return                     An array of all the matching CLLOs
      */
-    public function findMatchingCLLOs($searchString) {
-        $cllo = self::TABLE_CLLO;
-        $clloNumber = self::TABLE_CLLO_NUMBER;
-        $clloText = self::TABLE_CLLO_TEXT;
-        $clloNotes = self::TABLE_CLLO_NOTES;
-        $likeString = "%{$searchString}%";
-
+    public function findMatchingCLLOs($searchString, $searchColumnArray = array(), 
+            $excludeIDArray = array()) {
+        
+        $completeSearchColumnArray = empty($searchColumnArray) ?
+            array(self::TABLE_CLLO_NUMBER, self::TABLE_CLLO_TEXT, self::TABLE_CLLO_NOTES) :
+            $searchColumnArray;
+        
+        return $this->findMatchingObjects('CourseLevelLearningOutcome', 
+            $searchString, self::TABLE_CLLO, $completeSearchColumnArray, 
+            array(self::TABLE_CLLO_NUMBER), self::TABLE_CLLO_ID, $excludeIDArray);
+        
+        /*
         $query = "SELECT * FROM $cllo WHERE ($clloNumber LIKE ?) OR ($clloText LIKE ?) OR ($clloNotes LIKE ?) ORDER BY $clloNumber ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($likeString, $likeString, $likeString)),
-            'CourseLevelLearningOutcome');
+         */
     }
 
     /**
@@ -2425,19 +2514,20 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * given string.
      *
      * @param $searchString        The substring to look for
+     * @param type $searchColumnArray
+     * @param type $excludeIDArray
      * @return                     An array of all the matching PLLOs
      */
-    public function findMatchingPLLOs($searchString) {
-        $pllo = self::TABLE_PLLO;
-        $plloNumber = self::TABLE_PLLO_NUMBER;
-        $plloText = self::TABLE_PLLO_TEXT;
-        $plloNotes = self::TABLE_PLLO_NOTES;
-        $likeString = "%{$searchString}%";
-
-        $query = "SELECT * FROM $pllo WHERE (($plloNumber LIKE ?) OR ($plloText LIKE ?) OR ($plloNotes LIKE ?)) ORDER BY $plloNumber ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($likeString, $likeString, $likeString)),
-            'PlanLevelLearningOutcome');
+    public function findMatchingPLLOs($searchString, $searchColumnArray = array(), 
+            $excludeIDArray = array()) {
+        
+        $completeSearchColumnArray = empty($searchColumnArray) ?
+            array(self::TABLE_PLLO_NUMBER, self::TABLE_PLLO_PREFIX, self::TABLE_PLLO_TEXT, self::TABLE_PLLO_NOTES) :
+            $searchColumnArray;
+        
+        return $this->findMatchingObjects('PlanLevelLearningOutcome', 
+            $searchString, self::TABLE_PLLO, $completeSearchColumnArray, 
+            array(self::TABLE_PLLO_NUMBER), self::TABLE_PLLO_ID, $excludeIDArray);
     }
 
     /**
@@ -2445,20 +2535,24 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * description contain the given string.
      *
      * @param $searchString        The substring to look for
+     * @param type $searchColumnArray
+     * @param type $excludeIDArray
      * @return                     An array of all the matching ILOs
      */
-    public function findMatchingILOs($searchString) {
-        $ilo = self::TABLE_ILO;
-        $iloNumber = self::TABLE_ILO_NUMBER;
-        $iloText = self::TABLE_ILO_TEXT;
-        $iloDescription = self::TABLE_ILO_DESCRIPTION;
-        $iloNotes = self::TABLE_ILO_NOTES;
-        $likeString = "%{$searchString}%";
-
+    public function findMatchingILOs($searchString, $searchColumnArray = array(), 
+            $excludeIDArray = array()) {
+        
+        $completeSearchColumnArray = empty($searchColumnArray) ?
+            array(self::TABLE_ILO_NUMBER, self::TABLE_ILO_TEXT, self::TABLE_ILO_DESCRIPTION, self::TABLE_ILO_NOTES) :
+            $searchColumnArray;
+        
+        return $this->findMatchingObjects('InstitutionLearningOutcome', 
+            $searchString, self::TABLE_ILO, $completeSearchColumnArray, 
+            array(self::TABLE_ILO_NUMBER), self::TABLE_ILO_ID, $excludeIDArray);
+        
+        /*
         $query = "SELECT * FROM $ilo WHERE (($iloNumber LIKE ?) OR ($iloText LIKE ?) OR ($iloDescription LIKE ?) OR ($iloNotes LIKE ?)) ORDER BY $iloNumber ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($likeString, $likeString, $likeString, $likeString)),
-            'InstitutionLearningOutcome');
+         */
     }
 
     /**
@@ -2466,21 +2560,24 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * given string.
      *
      * @param $searchString        The substring to look for
+     * @param type $searchColumnArray
+     * @param type $excludeIDArray
      * @return                     An array of all the matching DLEs
      */
-    public function findMatchingDLEs($searchString) {
-        $dle = self::TABLE_DLE;
-        $dleNumber = self::TABLE_DLE_NUMBER;
-        $dleText = self::TABLE_DLE_TEXT;
-        $dleNotes = self::TABLE_DLE_NOTES;
-        $likeString = "%{$searchString}%";
+    public function findMatchingDLEs($searchString, $searchColumnArray = array(), 
+            $excludeIDArray = array()) {
 
-        $query = "SELECT * FROM $dle WHERE";
-        $query .= " (($dleNumber LIKE ?) OR ($dleText LIKE ?) OR ($dleNotes LIKE ?)) ORDER BY $dleNumber ASC";
+        $completeSearchColumnArray = empty($searchColumnArray) ?
+            array(self::TABLE_DLE_NUMBER, self::TABLE_DLE_TEXT, self::TABLE_DLE_NOTES) :
+            $searchColumnArray;
+        
+        return $this->findMatchingObjects('DegreeLevelExpectation', 
+            $searchString, self::TABLE_DLE, $completeSearchColumnArray, 
+            array(self::TABLE_DLE_NUMBER), self::TABLE_DLE_ID, $excludeIDArray);
 
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($likeString, $likeString, $likeString)),
-            'DegreeLevelExpectation');
+        /*
+        $query = "SELECT * FROM $dle WHERE (($dleNumber LIKE ?) OR ($dleText LIKE ?) OR ($dleNotes LIKE ?)) ORDER BY $dleNumber ASC";
+        */
     }
 
     /**
@@ -2488,18 +2585,24 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * value contain the given string.
      *
      * @param $searchString        The substring to look for
+     * @param type $searchColumnArray
+     * @param type $excludeIDArray
      * @return                     An array of all the matching revisions
      */
-    public function findMatchingRevisions($searchString) {
-        $revision = self::TABLE_REVISION;
-        $revisionPrior = self::TABLE_REVISION_PRIOR_VALUE;
-        $revisionDate = self::TABLE_REVISION_DATE_AND_TIME;
-        $likeString = "%{$searchString}%";
+    public function findMatchingRevisions($searchString, $searchColumnArray = array(), 
+            $excludeIDArray = array()) {
 
+        $completeSearchColumnArray = empty($searchColumnArray) ?
+            array(self::TABLE_REVISION_PRIOR_VALUE, self::TABLE_REVISION_DATE_AND_TIME) :
+            $searchColumnArray;
+        
+        return $this->findMatchingObjects('Revision', 
+            $searchString, self::TABLE_REVISION, $completeSearchColumnArray, 
+            array(self::TABLE_REVISION_DATE_AND_TIME), self::TABLE_REVISION_ID, $excludeIDArray);
+        
+        /*
         $query = "SELECT * FROM $revision WHERE (($revisionPrior LIKE ?) OR ($revisionDate LIKE ?)) ORDER BY $revisionDate DESC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($likeString, $likeString)),
-            'Revision');
+         */
     }
     
     /**
@@ -2507,17 +2610,24 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * string.
      *
      * @param $searchString        The substring to look for
+     * @param type $searchColumnArray
+     * @param type $excludeIDArray
      * @return                     An array of all the matching Faculties
      */
-    public function findMatchingFaculties($searchString) {
-        $faculty = self::TABLE_FACULTY;
-        $facultyName = self::TABLE_FACULTY_NAME;
-        $likeString = "%{$searchString}%";
+    public function findMatchingFaculties($searchString, $searchColumnArray = array(), 
+            $excludeIDArray = array()) {
 
+        $completeSearchColumnArray = empty($searchColumnArray) ?
+            array(self::TABLE_FACULTY_NAME) :
+            $searchColumnArray;
+        
+        return $this->findMatchingObjects('Faculty', 
+            $searchString, self::TABLE_FACULTY, $completeSearchColumnArray, 
+            array(self::TABLE_FACULTY_NAME), self::TABLE_FACULTY_ID, $excludeIDArray);
+        
+        /*
         $query = "SELECT * FROM $faculty WHERE ($facultyName LIKE ?) ORDER BY $facultyName ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($likeString)),
-            'Faculty');
+         */
     }
 
     /**
@@ -2525,17 +2635,24 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * string.
      *
      * @param $searchString        The substring to look for
+     * @param type $searchColumnArray
+     * @param type $excludeIDArray
      * @return                     An array of all the matching Departments
      */
-    public function findMatchingDepartments($searchString) {
-        $department = self::TABLE_DEPARTMENT;
-        $departmentName = self::TABLE_DEPARTMENT_NAME;
-        $likeString = "%{$searchString}%";
+    public function findMatchingDepartments($searchString, $searchColumnArray = array(), 
+            $excludeIDArray = array()) {
 
+        $completeSearchColumnArray = empty($searchColumnArray) ?
+            array(self::TABLE_DEPARTMENT_NAME) :
+            $searchColumnArray;
+        
+        return $this->findMatchingObjects('Department', 
+            $searchString, self::TABLE_DEPARTMENT, $completeSearchColumnArray, 
+            array(self::TABLE_DEPARTMENT_NAME), self::TABLE_DEPARTMENT_ID, $excludeIDArray);
+        
+        /*
         $query = "SELECT * FROM $department WHERE ($departmentName LIKE ?) ORDER BY $departmentName ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($likeString)),
-            'Department');
+         */
     }
 
     /**
@@ -2543,18 +2660,24 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * given string.
      *
      * @param $searchString        The substring to look for
+     * @param type $searchColumnArray
+     * @param type $excludeIDArray
      * @return                     An array of all the matching Degrees
      */
-    public function findMatchingDegrees($searchString) {
-        $degree = self::TABLE_DEGREE;
-        $degreeName = self::TABLE_DEGREE_NAME;
-        $degreeCode = self::TABLE_DEGREE_CODE;
-        $likeString = "%{$searchString}%";
+    public function findMatchingDegrees($searchString, $searchColumnArray = array(), 
+            $excludeIDArray = array()) {
 
+        $completeSearchColumnArray = empty($searchColumnArray) ?
+            array(self::TABLE_DEGREE_NAME, self::TABLE_DEGREE_CODE) :
+            $searchColumnArray;
+        
+        return $this->findMatchingObjects('Degree', 
+            $searchString, self::TABLE_DEGREE, $completeSearchColumnArray, 
+            array(self::TABLE_DEGREE_NAME), self::TABLE_DEGREE_ID, $excludeIDArray);
+
+        /*
         $query = "SELECT * FROM $degree WHERE ($degreeName LIKE ?) OR ($degreeCode LIKE ?) ORDER BY $degreeName ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($likeString, $likeString)),
-            'Degree');
+         */
     }
 
     /**
@@ -2562,21 +2685,24 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * given string.
      *
      * @param $searchString        The substring to look for
+     * @param type $searchColumnArray
+     * @param type $excludeIDArray
      * @return                     An array of all the matching Plans
      */
-    public function findMatchingPlans($searchString) {
-        $plan = self::TABLE_PLAN;
-        $planName = self::TABLE_PLAN_NAME;
-        $planCode = self::TABLE_PLAN_CODE;
-        $planType = self::TABLE_PLAN_TYPE;
-        $planText = self::TABLE_PLAN_TEXT;
-        $planNotes = self::TABLE_PLAN_NOTES;
-        $likeString = "%{$searchString}%";
+    public function findMatchingPlans($searchString, $searchColumnArray = array(), 
+            $excludeIDArray = array()) {
 
+        $completeSearchColumnArray = empty($searchColumnArray) ?
+            array(self::TABLE_PLAN_NAME, self::TABLE_PLAN_CODE, self::TABLE_PLAN_TYPE, self::TABLE_PLAN_TEXT, self::TABLE_PLAN_NOTES) :
+            $searchColumnArray;
+        
+        return $this->findMatchingObjects('Plan', 
+            $searchString, self::TABLE_PLAN, $completeSearchColumnArray, 
+            array(self::TABLE_PLAN_NAME), self::TABLE_PLAN_ID, $excludeIDArray);
+        
+        /*
         $query = "SELECT * FROM $plan WHERE ($planName LIKE ?) OR ($planCode LIKE ?) OR ($planType LIKE ?) OR ($planText LIKE ?) OR ($planNotes LIKE ?) ORDER BY $planName ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($likeString, $likeString, $likeString, $likeString, $likeString)),
-            'Plan');
+         */
     }
 
     /**
@@ -2584,20 +2710,24 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * given string.
      *
      * @param $searchString        The substring to look for
+     * @param type $searchColumnArray
+     * @param type $excludeIDArray
      * @return                     An array of all the matching Programs
      */
-    public function findMatchingPrograms($searchString) {
-        $program = self::TABLE_PROGRAM;
-        $programName = self::TABLE_PROGRAM_NAME;
-        $programType = self::TABLE_PROGRAM_TYPE;
-        $programText = self::TABLE_PROGRAM_TEXT;
-        $programNotes = self::TABLE_PROGRAM_NOTES;
-        $likeString = "%{$searchString}%";
+    public function findMatchingPrograms($searchString, $searchColumnArray = array(), 
+            $excludeIDArray = array()) {
 
+        $completeSearchColumnArray = empty($searchColumnArray) ?
+            array(self::TABLE_PROGRAM_NAME, self::TABLE_PROGRAM_TYPE, self::TABLE_PROGRAM_TEXT, self::TABLE_PROGRAM_NOTES) :
+            $searchColumnArray;
+        
+        return $this->findMatchingObjects('Program', 
+            $searchString, self::TABLE_PROGRAM, $completeSearchColumnArray, 
+            array(self::TABLE_PROGRAM_NAME), self::TABLE_PROGRAM_ID, $excludeIDArray);
+        
+        /*
         $query = "SELECT * FROM $program WHERE ($programName LIKE ?) OR ($programType LIKE ?) OR ($programText LIKE ?) OR ($programNotes LIKE ?) ORDER BY $programName ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($likeString, $likeString, $likeString, $likeString)),
-            'Program');
+         */
     }        
 
 
@@ -2718,6 +2848,19 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 self::TABLE_PLLO_AND_ILO_PLLO_ID, array($plloID)),
             'PLLOAndILO');
     }
+    
+    /**
+     * 
+     * @param type $plloID
+     * @return type
+     */
+    public function getPlansAndPLLOsForPLLO($plloID) {
+        return $this->createObjectsFromDatabaseRows(
+            $this->getAllRows(self::TABLE_PLAN_AND_PLLO, 
+                self::TABLE_PLAN_AND_PLLO_PLLO_ID, 
+                self::TABLE_PLAN_AND_PLLO_PLLO_ID, array($plloID)),
+            'PlanAndPLLO');
+    }    
 
     /**
      * Extracts all of the Revisions in the database.
@@ -2902,16 +3045,16 @@ class CurriculumMappingDatabase extends DatabaseManager {
       * @param type $limit
       * @return type
       */
-     public function getLatestRevisions($userID, $editor = true, $limit = 5) {
+     public function getLatestRevisions($argUserID, $argEditor = true, $argLimit = 5) {
          $revision = self::TABLE_REVISION;
          $userID = self::TABLE_REVISION_USER_ID;
          $dateAndTime = self::TABLE_REVISION_DATE_AND_TIME;
 
-         $comparison = $editor ? "=" : "<>";
+         $comparison = $argEditor ? "=" : "<>";
 
-         $query = "SELECT * FROM $revision WHERE $userID $comparison ? ORDER BY $dateAndTime DESC LIMIT $limit ";
+         $query = "SELECT * FROM $revision WHERE $userID $comparison ? ORDER BY $dateAndTime DESC LIMIT $argLimit ";
          return $this->createObjectsFromDatabaseRows(
-             $this->getQueryResults($query, array($userID)), 'Revision');
+             $this->getQueryResults($query, array($argUserID)), 'Revision');
      }
 
     /**
@@ -3107,7 +3250,28 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 null, $dateAndTime
         );
         $this->insertRevision($revision);
+        
+        // Get the plan(s) associated with the PLLO
+        $planIDArray = qsc_core_extract_array_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED, FILTER_SANITIZE_NUMBER_INT);
 
+        // Go through each plan ID
+        foreach ($planIDArray as $planID) {
+            // Insert a revision for adding the new PlanAndPLLO
+            $revision = new Revision(
+                    DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
+                    self::TABLE_PLAN_AND_PLLO, null,
+                    array(self::TABLE_PLAN_AND_PLLO_PLAN_ID => $planID,
+                        self::TABLE_PLAN_AND_PLLO_PLLO_ID => $newPLLO->getDBID()),
+                    self::TABLE_REVISION_ACTION_ADDED,
+                    null, $dateAndTime
+            );
+            $this->insertRevision($revision);
+            
+           // Add the new PlanAndPLLO
+            $planAndPLLO = new PlanAndPLLO($planID, $newPLLO->getDBID());
+            $this->insertPlanAndPLLO($planAndPLLO);
+        }
+        
         // Determine if the new PLLO is associated with a DLE
         $dleID = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_PARENT_DLE_SELECT, FILTER_SANITIZE_NUMBER_INT);
         if (! $dleID) {
@@ -3118,7 +3282,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $plloAndDLE = new PLLOAndDLE($newPLLO->getDBID(), $dleID);
         $this->insertPLLOAndDLE($plloAndDLE);
 
-        // Insert a revision for adding the new CLLOAndCourse
+        // Insert a revision for adding the new PLLOAndDLE
         $revision = new Revision(
                 DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
                 self::TABLE_PLLO_AND_DLE, null,
@@ -3247,7 +3411,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $colCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
 
         $query = "INSERT INTO $tableName ($colCLLOID, $colCourseID) VALUES (?, ?)";
-        $valueArray = array($clloAndCourse->getCCMDBID(), $clloAndCourse->getCourseDBID());
+        $valueArray = array($clloAndCourse->getCLLODBID(), $clloAndCourse->getCourseDBID());
 
         /*
         echo "<p>$query</br>";
@@ -3268,7 +3432,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $colPLLOID = self::TABLE_CLLO_AND_PLLO_PLLO_ID;
 
         $query = "INSERT INTO $tableName ($colCLLOID, $colPLLOID) VALUES (?, ?)";
-        $valueArray = array($clloAndPLLO->getCCMDBID(), $clloAndPLLO->getPCMDBID());
+        $valueArray = array($clloAndPLLO->getCLLODBID(), $clloAndPLLO->getPLLODBID());
 
         /*
         echo "<p>$query</br>";
@@ -3289,7 +3453,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $colILOID = self::TABLE_CLLO_AND_ILO_ILO_ID;
 
         $query = "INSERT INTO $tableName ($colCLLOID, $colILOID) VALUES (?, ?)";
-        $valueArray = array($clloAndILO->getCCMDBID(), $clloAndILO->getICMDBID());
+        $valueArray = array($clloAndILO->getCLLODBID(), $clloAndILO->getILODBID());
 
         /*
         echo "<p>$query</br>";
@@ -3310,7 +3474,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $colDLEID = self::TABLE_PLLO_AND_DLE_DLE_ID;
 
         $query = "INSERT INTO $tableName ($colPLLOID, $colDLEID) VALUES (?, ?)";
-        $valueArray = array($clloAndDLE->getPCMDBID(), $clloAndDLE->getDLEDBID());
+        $valueArray = array($clloAndDLE->getPLLODBID(), $clloAndDLE->getDLEDBID());
 
         /*
         echo "<p>$query</br>";
@@ -3331,7 +3495,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $colILOID = self::TABLE_PLLO_AND_ILO_ILO_ID;
 
         $query = "INSERT INTO $tableName ($colPLLOID, $colILOID) VALUES (?, ?)";
-        $valueArray = array($plloAndILO->getPCMDBID(), $plloAndILO->getICMDBID());
+        $valueArray = array($plloAndILO->getPLLODBID(), $plloAndILO->getILODBID());
 
         /*
         echo "<p>$query</br>";
@@ -3341,6 +3505,27 @@ class CurriculumMappingDatabase extends DatabaseManager {
 
         $this->performQuery($query, $valueArray);
     }
+    
+    /**
+     * 
+     * @param type $plloAndILO
+     */
+    protected function insertPlanAndPLLO($planAndPLLO) {
+        $tableName = self::TABLE_PLAN_AND_PLLO;
+        $colPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
+        $colPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
+
+        $query = "INSERT INTO $tableName ($colPlanID, $colPLLOID) VALUES (?, ?)";
+        $valueArray = array($planAndPLLO->getPlanDBID(), $planAndPLLO->getPLLODBID());
+
+        /*
+        echo "<p>$query</br>";
+        print_r($valueArray);
+        echo "</p>";
+        */
+
+        $this->performQuery($query, $valueArray);
+    }    
     
 
     /**************************************************************************
@@ -3468,9 +3653,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
                 self::TABLE_CLLO_AND_PLLO, null,
                 array(self::TABLE_CLLO_AND_PLLO_CLLO_ID =>
-                    $deletedCLLOAndPLLO->getCCMDBID(),
+                    $deletedCLLOAndPLLO->getCLLODBID(),
                     self::TABLE_CLLO_AND_PLLO_PLLO_ID =>
-                    $deletedCLLOAndPLLO->getPCMDBID()),
+                    $deletedCLLOAndPLLO->getPLLODBID()),
                 self::TABLE_REVISION_ACTION_DELETED,
                 null, $dateAndTime
             );
@@ -3531,9 +3716,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
                 self::TABLE_CLLO_AND_ILO, null,
                 array(self::TABLE_CLLO_AND_ILO_CLLO_ID =>
-                    $deletedCLLOAndILO->getCCMDBID(),
+                    $deletedCLLOAndILO->getCLLODBID(),
                     self::TABLE_CLLO_AND_ILO_ILO_ID =>
-                    $deletedCLLOAndILO->getICMDBID()),
+                    $deletedCLLOAndILO->getILODBID()),
                 self::TABLE_REVISION_ACTION_DELETED,
                 null, $dateAndTime
             );
@@ -3547,7 +3732,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
                 self::TABLE_CLLO_AND_ILO, null,
                 array(self::TABLE_CLLO_AND_ILO_CLLO_ID =>
-                    $addedCLLOAndILO->getCCMDBID(),
+                    $addedCLLOAndILO->getCLLODBID(),
                     self::TABLE_CLLO_AND_ILO_ILO_ID =>
                     $addedCLLOAndILO->getICMDBID()),
                 self::TABLE_REVISION_ACTION_ADDED,
@@ -3573,7 +3758,8 @@ class CurriculumMappingDatabase extends DatabaseManager {
 
         // Create the updated version of the PLLO from the submitted form
         $updatedPLLO = PLLO::buildFromPLLOPostData();
-
+        $updatedPLLO->initialize($this);
+        
         // Start with the revisions to the PLLO object/row
         $revisionArray = $originalPLLO->getRevisions($updatedPLLO, $userID, $dateAndTime);
 
@@ -3583,8 +3769,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $this->insertRevisions($revisionArray);
 
         // Now move onto the PLLO's relationships
+        $this->updatePlanAndPLLOsFromPostData($originalPLLO, $userID, $dateAndTime);
         $this->updatePLLOAndDLEFromPostData($originalPLLO, $userID, $dateAndTime);
-        $this->updatePLLOsAndILOsFromPostData($originalPLLO, $userID, $dateAndTime);
+        $this->updatePLLOAndILOsFromPostData($originalPLLO, $userID, $dateAndTime);
         
         return $updatedPLLO;
     }
@@ -3656,7 +3843,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @param $userID
      * @param $dateAndTime
      */
-    protected function updatePLLOsAndILOsFromPostData($originalPLLO, $userID, $dateAndTime) {
+    protected function updatePLLOAndILOsFromPostData($originalPLLO, $userID, $dateAndTime) {
         // Get the ILO IDs from the form data
         $updatedILOIDArray = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_FORM_PLLO_ILO_LIST_SUPPORTED, FILTER_SANITIZE_NUMBER_INT);
         if (! $updatedILOIDArray) {
@@ -3682,9 +3869,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
                 self::TABLE_PLLO_AND_ILO, null,
                 array(self::TABLE_PLLO_AND_ILO_PLLO_ID =>
-                    $deletedPLLOAndILO->getPCMDBID(),
+                    $deletedPLLOAndILO->getPLLODBID(),
                     self::TABLE_PLLO_AND_ILO_ILO_ID =>
-                    $deletedPLLOAndILO->getICMDBID()),
+                    $deletedPLLOAndILO->getILODBID()),
                 self::TABLE_REVISION_ACTION_DELETED,
                 null, $dateAndTime
             );
@@ -3698,9 +3885,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
                 self::TABLE_PLLO_AND_ILO, null,
                 array(self::TABLE_PLLO_AND_ILO_PLLO_ID =>
-                    $addedPLLOAndILO->getPCMDBID(),
+                    $addedPLLOAndILO->getPLLODBID(),
                     self::TABLE_PLLO_AND_ILO_ILO_ID =>
-                    $addedPLLOAndILO->getICMDBID()),
+                    $addedPLLOAndILO->getILODBID()),
                 self::TABLE_REVISION_ACTION_ADDED,
                 null, $dateAndTime
             );
@@ -3711,7 +3898,71 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $this->performEditAndDeleteRevisions($revisionArray);
         $this->insertRevisions($revisionArray);
     }
-    
+        
+    /**
+     * Compares a set of older PlanAndPLLOs with a set of newer counterparts
+     * and determines what revisions have been made.
+     *
+     * @param $originalPLLO
+     * @param $userID
+     * @param $dateAndTime
+     */
+    protected function updatePlanAndPLLOsFromPostData($originalPLLO, $userID, $dateAndTime) {
+        // Get the Plan IDs from the form data
+        $updatedPlanIDArray = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED, FILTER_SANITIZE_NUMBER_INT);
+        if (! $updatedPlanIDArray) {
+            $updatedPlanIDArray = array();
+        }
+
+        // Create an updated set of PlanAndPLLOs
+        $updatedPlanAndPLLOArray = array();
+        foreach ($updatedPlanIDArray as $updatedPlanID) {
+             $updatedPlanAndPLLOArray[] = new PlanAndPLLO($updatedPlanID, $originalPLLO->getDBID());
+        }
+
+        // Get the original PLLO and Plan information in the database
+        $originalPlanAndPLLOArray = $this->getPlansAndPLLOsForPLLO($originalPLLO->getDBID());
+
+        // Remove the identical PlanAndPLLOs in both arrays
+        qsc_core_remove_identical_values($updatedPlanAndPLLOArray, $originalPlanAndPLLOArray);
+
+        // Everything left in the prior set has been deleted
+        $revisionArray = array();
+        foreach($originalPlanAndPLLOArray as $deletedPlanAndPLLO) {
+            $revisionArray[] = new Revision(
+                DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
+                self::TABLE_PLAN_AND_PLLO, null,
+                array(self::TABLE_PLAN_AND_PLLO_PLAN_ID =>
+                    $deletedPlanAndPLLO->getPlanDBID(),
+                    self::TABLE_PLAN_AND_PLLO_PLLO_ID =>
+                    $deletedPlanAndPLLO->getPLLODBID()),
+                self::TABLE_REVISION_ACTION_DELETED,
+                null, $dateAndTime
+            );
+        }
+
+        // Everything left in the new set has been added
+        foreach($updatedPlanAndPLLOArray as $addedPlanAndPLLO) {
+            $this->insertPlanAndPLLO($addedPlanAndPLLO);
+            // $pdo->lastInsertId
+            $revisionArray[] = new Revision(
+                DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
+                self::TABLE_PLAN_AND_PLLO, null,
+                array(self::TABLE_PLAN_AND_PLLO_PLAN_ID =>
+                    $addedPlanAndPLLO->getPlanDBID(),
+                    self::TABLE_PLAN_AND_PLLO_PLLO_ID =>
+                    $addedPlanAndPLLO->getPLLODBID()),
+                self::TABLE_REVISION_ACTION_ADDED,
+                null, $dateAndTime
+            );
+        }
+
+        // Perform the changes/revisions and add each revision to the
+        // database
+        $this->performEditAndDeleteRevisions($revisionArray);
+        $this->insertRevisions($revisionArray);
+    }
+        
     
     /**************************************************************************
      * Deleting
@@ -3763,9 +4014,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
                 self::TABLE_CLLO_AND_PLLO, null,
                 array(self::TABLE_CLLO_AND_PLLO_CLLO_ID =>
-                    $clloAndPLLO->getCCMDBID(),
+                    $clloAndPLLO->getCLLODBID(),
                     self::TABLE_CLLO_AND_PLLO_PLLO_ID =>
-                    $clloAndPLLO->getPCMDBID()),
+                    $clloAndPLLO->getPLLODBID()),
                 self::TABLE_REVISION_ACTION_DELETED,
                 null, $dateAndTime
             );
@@ -3779,9 +4030,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
                 self::TABLE_CLLO_AND_ILO, null,
                 array(self::TABLE_CLLO_AND_ILO_CLLO_ID =>
-                    $clloAndILO->getCCMDBID(),
+                    $clloAndILO->getCLLODBID(),
                     self::TABLE_CLLO_AND_ILO_ILO_ID =>
-                    $clloAndILO->getICMDBID()),
+                    $clloAndILO->getILODBID()),
                 self::TABLE_REVISION_ACTION_DELETED,
                 null, $dateAndTime
             );

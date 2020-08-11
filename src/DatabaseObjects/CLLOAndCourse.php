@@ -76,11 +76,11 @@ class CLLOAndCourse extends BiRelationship {
     /**
      * This constructor sets all of the member variables using the arguments.
      *
-     * @param type $argCCMDBID
+     * @param type $argCLLODBID
      * @param type $argCourseDBID
      */
-    public function __construct($argCCMDBID, $argCourseDBID) {
-        parent::__construct($argCCMDBID, $argCourseDBID);
+    public function __construct($argCLLODBID, $argCourseDBID) {
+        parent::__construct($argCLLODBID, $argCourseDBID);
     }
 
 
@@ -92,7 +92,7 @@ class CLLOAndCourse extends BiRelationship {
      *
      * @return      The string ID
      */
-    public function getCCMDBID() {
+    public function getCLLODBID() {
         return $this->firstDBID;
     }
 

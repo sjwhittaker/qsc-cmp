@@ -28,24 +28,24 @@ namespace DatabaseObjects;
 use Managers\CurriculumMappingDatabase as CMD;
 
 /** 
- * The class PLLOAndDLE represents a relationship between a PLLO and DLE as 
+ * The class PLLOAndPlan represents a relationship between a plan and a PLLO as 
  * stored in the database.
  */
-class PLLOAndDLE extends BiRelationship {
+class PlanAndPLLO extends BiRelationship {
     /**************************************************************************
      * Static Functions
      **************************************************************************/
     /** 
      * This function uses the values in a database row to create a new 
-     * PLLOAndDLE object and set the values of the member variables.
+     * PLLOAndPlan object and set the values of the member variables.
      *
      * @param $argArray        The course row from the database
      */ 
      public static function buildFromDBRow($argArray) {
-         $pllo_id = $argArray[CMD::TABLE_PLLO_AND_DLE_PLLO_ID];
-         $dle_id = $argArray[CMD::TABLE_PLLO_AND_DLE_DLE_ID];         
+         $plan_id = $argArray[CMD::TABLE_PLAN_AND_PLLO_PLAN_ID];         
+         $pllo_id = $argArray[CMD::TABLE_PLAN_AND_PLLO_PLLO_ID];
          
-         return new PLLOAndDLE($pllo_id, $dle_id);
+         return new PlanAndPLLO($plan_id, $pllo_id);
      }
           
  
@@ -55,11 +55,11 @@ class PLLOAndDLE extends BiRelationship {
     /** 
      * This constructor sets all of the member variables using the arguments.
      *
+     * @param type $argPlanDBID
      * @param type $argPLLODBID
-     * @param type $argDLEDBID
      */
-    public function __construct($argPLLODBID, $argDLEDBID) {
-        parent::__construct($argPLLODBID, $argDLEDBID);
+    public function __construct($argPlanDBID, $argPLLODBID) {
+        parent::__construct($argPlanDBID, $argPLLODBID);
     }
 
      
@@ -67,20 +67,20 @@ class PLLOAndDLE extends BiRelationship {
      * Get and Set Methods
      **************************************************************************/
     /** 
+     * The get method for the plan's database ID.
+     *
+     * @return      The string ID
+     */ 
+    public function getPlanDBID() {
+        return $this->firstDBID;   
+    } 
+
+    /** 
      * The get method for the PLLO's database ID.
      *
      * @return      The string ID
      */ 
     public function getPLLODBID() {
-        return $this->firstDBID;   
-    } 
-
-    /** 
-     * The get method for the DLE's database ID.
-     *
-     * @return      The string ID
-     */ 
-    public function getDLEDBID() {
         return $this->secondDBID;   
     } 
 

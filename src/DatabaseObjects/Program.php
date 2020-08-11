@@ -52,6 +52,14 @@ class Program extends CalendarComponent {
 
         return new Program($id, $name, $type, $code, $text, $notes);
     }
+    
+    /**
+     * 
+     * @return boolean
+     */
+    public static function sortAfterInitialization() {
+        return true;
+    }    
        
 
     /*************************************************************************
@@ -113,7 +121,6 @@ class Program extends CalendarComponent {
         $degreeCode = '';
         
         $delimeter = QSC_CMP_PROGRAM_AND_PLAN_NAME_DELIMETER;
-
         
         if ($this->plan) {
             $planName = $this->plan->getName();
