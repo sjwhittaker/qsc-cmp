@@ -41,6 +41,8 @@ const QSC_CMP_FORM_CLLO_TYPE = "#cllo-type";
 const QSC_CMP_FORM_CLLO_IOA = "#cllo-ioa";
 const QSC_CMP_FORM_CLLO_NOTES = "#cllo-notes";
 
+const QSC_CMP_FORM_CLLO_PLLO_INPUT = "#cllo-pllo-list-input";
+const QSC_CMP_FORM_CLLO_PLLO_INPUT_HELP = "#cllo-pllo-list-input-help";
 const QSC_CMP_FORM_CLLO_PLLO_LIST_POSSIBLE = "#cllo-pllo-list-possible";
 const QSC_CMP_FORM_CLLO_PLLO_LIST_SUPPORTED = "#cllo-pllo-list-supported";
 const QSC_CMP_FORM_CLLO_PLLO_ADD = "#cllo-pllo-add";
@@ -89,10 +91,16 @@ function qscCMPCLLOHandleCourseSelection() {
     let currentCLLOID = $(QSC_CMP_FORM_CLLO_ID).val();
     let courseSelect = $(QSC_CMP_FORM_CLLO_COURSE_SELECT);
 
-    // Any change to the course selection means removing the prior
-    // parent CLLO options
+    // Any change to the course selection means:
+    // 1) removing the prior parent CLLO options
+    // 2) removing the prior PLLO options
     let parentCLLOSelect = $(QSC_CMP_FORM_CLLO_PARENT_SELECT);
     parentCLLOSelect.find("option").remove();
+
+    let plloPossibleSelect = $(QSC_CMP_FORM_CLLO_PLLO_LIST_POSSIBLE);
+    let plloSupportedSelect = $(QSC_CMP_FORM_CLLO_PLLO_LIST_SUPPORTED);
+    plloPossibleSelect.find("option").remove();
+    plloSupportedSelect.find("option").remove();    
 
     // Get the selected option from the list of courses and check that
     // the change was to select, not unselect
@@ -101,11 +109,10 @@ function qscCMPCLLOHandleCourseSelection() {
         return;
     }
 
-    // Prep the AJAX data
+    // Prep the AJAX data and get the associated CLLOs
     let ajaxData = {action: QSC_CMP_AJAX_ACTION_GET_CLLOS_FOR_COURSE,
         id: selectedCourse.val()
-    };
-    
+    };    
     qscCorePerformAJAXRequest(QSC_CMP_AJAX_SCRIPT_GET_CLLOS, ajaxData,
         function (jsonData) {
             // Create new options from the JSON data and put them in the select
@@ -113,6 +120,48 @@ function qscCMPCLLOHandleCourseSelection() {
                 qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name', currentCLLOID));
         }
     );
+    
+    // Now prep the AJAX data and get the associated PLLOs
+    ajaxData = {action: QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_COURSE,
+        id: selectedCourse.val()
+    };    
+    qscCorePerformAJAXRequest(QSC_CMP_AJAX_SCRIPT_GET_PLLOS, ajaxData,
+        function (jsonData) {
+            // Create new options from the JSON data and put them in the select
+            plloPossibleSelect.append(
+                qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name', currentCLLOID));
+        }
+    );  
+}
+
+function qscCMPCLLOHandlePLLOInput() {
+    // AJAX isn't necessary here as as the PLLO options were loaded when the 
+    // course was selected. All that's needed is a filter.
+    let plloInputText = $(QSC_CMP_FORM_CLLO_PLLO_INPUT).val();
+    let plloPossibleSelectOptions = $(QSC_CMP_FORM_CLLO_PLLO_LIST_POSSIBLE).find("option");
+
+    // If there's no text then display all of options
+    if (! plloInputText) {
+        plloPossibleSelectOptions.show();
+        return;
+    }     
+
+    // Go through each possible PLLO to select
+    plloInputText = plloInputText.toLowerCase();
+    plloPossibleSelectOptions.each(function() {
+        let optionText = $(this).text();
+        if (! optionText) {
+            return;
+        }
+        
+        optionText = optionText.toLowerCase();
+        if (optionText.indexOf(plloInputText) === -1) {
+            $(this).hide();
+        }
+        else {
+            $(this).show();
+        }
+    });
 }
 
 
@@ -125,7 +174,10 @@ $(document).ready(function() {
     
     // Handle the user changing the selected course, which must change
     // the possible parent CLLO options
-    $(QSC_CMP_FORM_CLLO_COURSE_SELECT).change(qscCMPCLLOHandleCourseSelection);    
+    $(QSC_CMP_FORM_CLLO_COURSE_SELECT).change(qscCMPCLLOHandleCourseSelection);
+    
+    // Handle the user entering text to filter the PLLO options
+    $(QSC_CMP_FORM_CLLO_PLLO_INPUT).keyup(qscCMPCLLOHandlePLLOInput);
     
     // Handle the user selecting the '>>' and '<<' buttons to move PLLOs
     // and ILOs back and forth
@@ -145,7 +197,7 @@ $(document).ready(function() {
     // Handle the user 'unselecting' the parent CLLO because Ctrl + click
     // doesn't unselect an option in a single select box
     qscCoreUnselectWithButton(QSC_CMP_FORM_CLLO_PARENT_UNSELECT,
-        QSC_CMP_FORM_CLLO_PARENT_SELECT);    
+        QSC_CMP_FORM_CLLO_PARENT_SELECT);
     
     // Handle form submission for add and edit
     $(QSC_CMP_FORM_CLLO_ADD + ', ' + QSC_CMP_FORM_CLLO_EDIT).submit(function(event) {

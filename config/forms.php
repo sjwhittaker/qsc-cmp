@@ -278,7 +278,7 @@ function qsc_cmp_display_cllo_form($form_action, $form_id, $form_type, $submit_b
         $course_name = $course->getName();
 
         // Get the CLLOs associated with the course
-        $course_CLLO_array = $db_curriculum->getCLLOsForCourse($course->getDBID());
+        $course_CLLO_array = $db_curriculum->getCLLOsForCourse($course->getDBID(), array($cllo_id));
 
         // Is there parent CLLO? If so, get it
         if ($cllo->hasParent()) {
@@ -292,7 +292,7 @@ function qsc_cmp_display_cllo_form($form_action, $form_id, $form_type, $submit_b
             qsc_core_get_db_id_array($pllo_chosen_array));
                 
         $ilo_chosen_array = $db_curriculum->getDirectILOsForCLLOs(array($cllo_id));
-        $ilo_possible_array = $db_curriculum->getAllPLANs(
+        $ilo_possible_array = $db_curriculum->getAllILOs(
             qsc_core_get_db_id_array($ilo_chosen_array));        
     }
     else {
@@ -381,22 +381,27 @@ function qsc_cmp_display_cllo_form($form_action, $form_id, $form_type, $submit_b
         ?>             
     </div>
     <div class="form-section">
-        <?php qsc_core_form_display_select_transfer_group(
+        <?php qsc_core_form_display_input_and_select_transfer_group(
             "Supports PLLOs",
+            QSC_CMP_FORM_CLLO_PLLO_INPUT, 
             QSC_CMP_FORM_CLLO_PLLO_LIST_POSSIBLE,
             QSC_CMP_FORM_CLLO_PLLO_LIST_SUPPORTED,
             QSC_CMP_FORM_CLLO_PLLO_ADD,
             QSC_CMP_FORM_CLLO_PLLO_REMOVE,
             array(
+                QSC_CORE_FORM_INPUT_HELP_ID => QSC_CMP_FORM_PLLO_PLAN_INPUT_HELP,
+                QSC_CORE_FORM_INPUT_HELP_TEXT => "Type the PLLO prefix <strong>or</strong> text here to filter the options in the list below.",
                 QSC_CORE_FORM_TRANSFER_POSSIBLE_HELP_ID => QSC_CMP_FORM_CLLO_PLLO_LIST_POSSIBLE_HELP,
                 QSC_CORE_FORM_TRANSFER_POSSIBLE_HELP_TEXT => "This list contains PLLOs that are <strong>not</strong> supported; click the buttons to transfer them to the supported list.",
                 QSC_CORE_FORM_TRANSFER_CHOSEN_HELP_ID => QSC_CMP_FORM_CLLO_PLLO_LIST_SUPPORTED_HELP,
                 QSC_CORE_FORM_TRANSFER_CHOSEN_HELP_TEXT => "This list contains PLLOs that <strong>are</strong> supported.",
                 QSC_CORE_FORM_TRANSFER_POSSIBLE_OPTIONS => qsc_cmp_extract_form_option_data($pllo_possible_array),
-                QSC_CORE_FORM_TRANSFER_CHOSEN_OPTIONS => qsc_cmp_extract_form_option_data($pllo_chosen_array)
+                QSC_CORE_FORM_TRANSFER_CHOSEN_OPTIONS => qsc_cmp_extract_form_option_data($pllo_chosen_array),
+                QSC_CORE_FORM_SELECT_HELP_ID => QSC_CMP_FORM_CLLO_PLLO_HELP,
+                QSC_CORE_FORM_SELECT_HELP_TEXT => "<strong>Note:</strong> the list of possible PLLOs is populated from the selected course's departments' administered plans."
             )
         );
-        ?>             
+        ?>                             
     </div>        
     <div class="form-section">
         <?php qsc_core_form_display_select_transfer_group(

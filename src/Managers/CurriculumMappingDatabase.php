@@ -1883,9 +1883,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * Extracts the CLLOs associated with a particular course.
      *
      * @param $idValue          The id of the course (string or numeric)
+     * @param $excludeIDArray
      * @return                  An array of the CLLOs set for the course
      */
-    public function getCLLOsForCourse($idValue) {
+    public function getCLLOsForCourse($idValue, $excludeIDArray = array()) {
         $cllo = self::TABLE_CLLO;
         $clloID = self::TABLE_CLLO_ID;
         $clloNumber = self::TABLE_CLLO_NUMBER;
@@ -1893,10 +1894,21 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cac = self::TABLE_CLLO_AND_COURSE;
         $cacCLLOID = self::TABLE_CLLO_AND_COURSE_CLLO_ID;
         $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
+        
+        $excludeIDQuestionMarkString = self::getQuestionMarkString($excludeIDArray);
+        $queryIDArray = $excludeIDArray;
+        $queryIDArray[] = $idValue;
 
-        $query = "SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cac WHERE $cac.$cacCourseID = ?) AS $cac ON $cllo.$clloID = $cac.$cacCLLOID ORDER BY $cllo.$clloNumber ASC";
+        $query = "SELECT $cllo.* FROM ";
+        if (empty($excludeIDArray)) {
+            $query .= $cllo;
+        }
+        else {
+            $query .= "(SELECT * FROM $cllo WHERE $cllo.$clloID NOT IN $excludeIDQuestionMarkString) as $cllo";            
+        }
+        $query .= " JOIN (SELECT * FROM $cac WHERE $cac.$cacCourseID = ?) AS $cac ON $cllo.$clloID = $cac.$cacCLLOID ORDER BY $cllo.$clloNumber ASC";
         return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($idValue)),
+            $this->getQueryResults($query, $queryIDArray),
             'CourseLevelLearningOutcome');
     }
 
@@ -2280,8 +2292,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
             $this->getQueryResults($query, array($dleIDValue, $planIDValue)),
             'PlanLevelLearningOutcome');
     }    
-    
-    
+        
     /**
      * 
      * @param type $dleIDValue
@@ -2381,6 +2392,39 @@ class CurriculumMappingDatabase extends DatabaseManager {
             $this->getQueryResult($query, array($idValue, $idValue)),
             'DegreeLevelExpectation');        
     }
+    
+    /**
+     * 
+     * @param type $courseIDValue
+     * @return type
+     */
+    public function getPLLOsForCourse($courseIDValue) {
+        $pllo = self::TABLE_PLLO;
+        $plloID = self::TABLE_PLLO_ID;
+        $plloNumber = self::TABLE_PLLO_NUMBER;
+        
+        $pap = self::TABLE_PLAN_AND_PLLO;
+        $papPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
+        $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
+        
+        $dap = self::TABLE_DEPARTMENT_AND_PLAN;
+        $dapPlanID = self::TABLE_DEPARTMENT_AND_PLAN_PLAN_ID;
+        $dapDepartmentID = self::TABLE_DEPARTMENT_AND_PLAN_DEPARTMENT_ID;
+                
+        $das = self::TABLE_DEPARTMENT_AND_SUBJECT;
+        $dasDepartmentID = self::TABLE_DEPARTMENT_AND_SUBJECT_DEPARTMENT_ID;
+        $dasSubject = self::TABLE_DEPARTMENT_AND_SUBJECT_SUBJECT;
+        
+        $course = self::TABLE_COURSE;
+        $courseID = self::TABLE_COURSE_ID;
+        $courseSubject = self::TABLE_COURSE_SUBJECT;
+                        
+        $query = "SELECT DISTINCT $pllo.* FROM $pllo JOIN $pap ON $pllo.$plloID = $pap.$papPLLOID JOIN $dap ON $pap.$papPlanID = $dap.$dapPlanID JOIN (SELECT $das.* FROM $das JOIN (SELECT * FROM $course WHERE $course.$courseID = ?) AS $course ON $das.$dasSubject = $course.$courseSubject) AS $das ON $dap.$dapDepartmentID = $das.$dasDepartmentID ORDER BY $pllo.$plloNumber ASC";
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($courseIDValue)),
+            'PlanLevelLearningOutcome');
+    }
+    
 
 
     /**************************************************************************
@@ -3668,9 +3712,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
                 self::TABLE_CLLO_AND_PLLO, null,
                 array(self::TABLE_CLLO_AND_PLLO_CLLO_ID =>
-                    $addedCLLOAndPLLO->getCCMDBID(),
+                    $addedCLLOAndPLLO->getCLLODBID(),
                     self::TABLE_CLLO_AND_PLLO_PLLO_ID =>
-                    $addedCLLOAndPLLO->getPCMDBID()),
+                    $addedCLLOAndPLLO->getPLLODBID()),
                 self::TABLE_REVISION_ACTION_ADDED,
                 null, $dateAndTime
             );

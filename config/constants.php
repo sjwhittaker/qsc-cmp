@@ -164,12 +164,15 @@ qsc_core_define_constant("QSC_CMP_FORM_CLLO_NOTES", "cllo-notes");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_NOTES_HELP", "cllo-notes-help");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_NOTES_MAX_LENGTH", 500);
 
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_PLLO_INPUT", "cllo-pllo-list-input");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_PLLO_INPUT_HELP", "cllo-pllo-list-input-help");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_PLLO_LIST_POSSIBLE", "cllo-pllo-list-possible");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_PLLO_LIST_POSSIBLE_HELP", "cllo-pllo-list-possible-help");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_PLLO_LIST_SUPPORTED", "cllo-pllo-list-supported");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_PLLO_LIST_SUPPORTED_HELP", "cllo-pllo-list-supported-help");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_PLLO_ADD", "cllo-pllo-add");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_PLLO_REMOVE", "cllo-pllo-remove");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_PLLO_HELP", "cllo-pllo-help");
 
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_ILO_LIST_POSSIBLE", "cllo-ilo-list-possible");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_ILO_LIST_POSSIBLE_HELP", "cllo-ilo-list-possible-help");
@@ -299,6 +302,7 @@ qsc_core_define_constant("QSC_CMP_AJAX_ACTION_SEARCH_REVISIONS", "searchRevision
 
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_CLLO_FROM_ID", "getCLLOFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_CLLOS_FOR_COURSE", "getCLLOsForCourse");
+qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_COURSE", "getPLLOsForCourse");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_COURSE_FROM_ID", "getCourseFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_DEGREE_FROM_ID", "getDegreeFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_DEPARTMENT_FROM_ID", "getDepartmentFromID");

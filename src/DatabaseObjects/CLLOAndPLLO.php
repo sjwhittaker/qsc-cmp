@@ -74,7 +74,7 @@ class CLLOAndPLLO extends BiRelationship {
      *
      * @return      The string ID
      */ 
-    public function getCCMDBID() {
+    public function getCLLODBID() {
         return $this->firstDBID;   
     } 
 
@@ -83,7 +83,7 @@ class CLLOAndPLLO extends BiRelationship {
      *
      * @return      The string ID
      */ 
-    public function getPCMDBID() {
+    public function getPLLODBID() {
         return $this->secondDBID;   
     } 
      
