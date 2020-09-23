@@ -247,7 +247,7 @@ class Course {
      * 
      * @return type
      */
-    public function getUnitsAsString() {
+    public function getUnitsToDisplay() {
         return number_format($this->units, 1);
     }
 
@@ -282,7 +282,7 @@ class Course {
         
         $anchor = '<a href="'.$this->getLinkToView().'">'.$this->getName();
         if ($this->getUnitsAsFloat()) {
-            $anchor .= '/'.$this->getUnitsAsString();
+            $anchor .= '/'.$this->getUnitsToDisplay();
         }
         $anchor .= '</a>';
         if ($calendarName) {            

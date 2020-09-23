@@ -27,51 +27,82 @@ namespace DatabaseObjects;
 
 use Managers\CurriculumMappingDatabase as CMD;
 
-/**
- * The class TextPlanRequirement represents a TPR as stored in the database.
- */
-class TextPlanRequirement extends PlanRequirement {
+
+class TPRList extends PlanRequirementList {
     /*************************************************************************
      * Static Functions
      ************************************************************************/
     /**
-     * This function uses the values in a database row to create a new
-     * TextPlanRequirement object and set the values of the member variables.
+     * This function checks the class in the database row and calls the
+     * corresponding function in the correct child class to create the 
+     * TPRList object.
+     * 
+     * NOTE: this only handles a row from the 'tprlist' table; it doesn't
+     * initialize the particular class of TPRList.
      *
-     * @param $argArray        The course row from the database
-     * @return                 A new TextPlanRequirement object with those
-     *                         values
+     * @param $argArray        The tpr row from the database
+     * @return                 A new TPRList object with those values
      */
     public static function buildFromDBRow($argArray) {
-        $id = $argArray[CMD::TABLE_TPR_ID];
-        $number = $argArray[CMD::TABLE_TPR_NUMBER];
-        $text = $argArray[CMD::TABLE_TPR_TEXT];
-        $notes = $argArray[CMD::TABLE_TPR_NOTES];
-        
-        return new TextPlanRequirement($id, $number, $text, $notes);
+        $id = $argArray[CMD::TABLE_TPRLIST_ID];
+        $number = $argArray[CMD::TABLE_TPRLIST_NUMBER];
+        $type = $argArray[CMD::TABLE_TPRLIST_TYPE];
+        $notes = $argArray[CMD::TABLE_TPRLIST_NOTES];
+
+        return new TPRList($id, $number, $type, $notes);
     }
-    
-    
+        
+
     /**************************************************************************
      * Member Variables
-     **************************************************************************/    
-
+     **************************************************************************/
+    
 
     /**************************************************************************
      * Constructor
      **************************************************************************/
 
+
+    /*************************************************************************
+     * Initialize
+     *************************************************************************/
+    /**
+     * Initializes the member variables that can't be set by a single DB row.
+     * 
+     * @param type $dbCurriculum
+     */
+    public function initialize($dbCurriculum, $argArray = array()) {
+        // Get the TPRs that are directly associated with this list
+        $this->childPRArray = $dbCurriculum->getChildTPRsForTPRList($this->dbID);
+        
+        // Fetch and initialize the child TPR lists
+        $this->childPRListArray = $dbCurriculum->getChildTPRListsForTPRList($this->dbID);        
+    }
+       
+
+    /**************************************************************************
+     * Get and Set Methods
+     **************************************************************************/    
+    /**
+     * 
+     * @return type
+     */
+    public function getChildTPRArray() {
+        return $this->childPRArray;
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public function getChildTPRListArray() {
+        return $this->childPRListArray;
+    }
+
     
     /**************************************************************************
      * Member Functions
-     **************************************************************************/    
-    /**
-     * Creates a link to view this TPR using its ID.
-     *
-     * @return      A string containing the link
-     */
-    public function getLinkToView() {
-        return self::getLinkWithID(QSC_CMP_TPR_VIEW_PAGE_LINK);
-    }
-
+     **************************************************************************/
+   
+        
 }

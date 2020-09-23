@@ -44,7 +44,7 @@ $courselist_level = qsc_core_extract_form_value(INPUT_GET, QSC_CORE_QUERY_STRING
 $courselist_or_above = qsc_core_extract_form_value(INPUT_GET, QSC_CORE_QUERY_STRING_NAME_OR_ABOVE, FILTER_VALIDATE_BOOLEAN);
 
 if (is_null($courselist_level)) {
-    $courselist_level = CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE;
+    $courselist_level = CMD::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE;
 }
 
 if ($courselist_id === false) :
@@ -112,17 +112,18 @@ else:
     </thead>
     <tbody>
             <?php foreach ($cpr_array as $cpr) :
-            $cpr_link = '<a href="'.$cpr->getLinkToView().'">'.$cpr->getType().' '.$cpr->getName().'</a>';
+            $cpr_link = '<a href="'.$cpr->getLinkToView().'">'.$cpr->getNumber().'</a>';
             
             $cpr_courselist =  $db_curriculum->getCourseListForCPR($cpr->getDBID());            
             $cpr_courselist_link = $cpr_courselist ? $cpr_courselist->getHTML() : QSC_CMP_TEXT_NONE_SPECIFIED;                
 
-            $cpr_plan = $db_curriculum->getPlanForCPR($cpr->getDBID());
+            $cpr_plan = $db_curriculum->getAncestorPlanForCPR($cpr->getDBID());
+            $cpr_type = $db_curriculum->getTypeForCPR($cpr->getDBID());
             $plan_link = $cpr_plan ? $cpr_plan->getAnchorToView() : QSC_CMP_TEXT_NONE_SPECIFIED;                
 ?>
         <tr>
             <td><?= $plan_link; ?></td>
-            <td><?= $cpr_link ?></td>
+            <td><?= $cpr_type ?> <?= $cpr_link ?></td>
             <td><?= $cpr->getUnits(); ?> units</td>
             <td><?= $cpr->getConnector(); ?></td>            
             <td><?= $cpr_courselist_link ?></td>

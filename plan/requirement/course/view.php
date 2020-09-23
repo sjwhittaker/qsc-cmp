@@ -52,7 +52,7 @@ else:
 <h1>Error Finding CPR</h1>
     <?php qsc_core_log_and_display_error("A course plan requirement with that ID could not be retrieved from the database.");
     else :
-        $plan = $db_curriculum->getPlanForCPR($cpr_id);
+        $plan = $db_curriculum->getAncestorPlanForCPR($cpr_id);
         $planName = ($plan) ? ' for '.$plan->getName() : '';
         $planAnchor = ($plan) ? ' for '.$plan->getAnchorToView() : '';
         
@@ -71,11 +71,14 @@ else:
         
         $number_of_courses = count($course_array);
         $number_of_course_subsets = count($course_subset_array);
+        
+        $parent_cpr_list = $db_curriculum->getParentCPRListForCPR($cpr_id);        
+        $cpr_type = $parent_cpr_list->getType();
                         
-        qsc_cmp_start_html(array(QSC_CMP_START_HTML_TITLE => "View ".$cpr->getType()." Requirement ".$cpr->getName().$planName));    
+        qsc_cmp_start_html(array(QSC_CMP_START_HTML_TITLE => "View $cpr_type Requirement ".$cpr->getNumber().$planName));    
         ?>
 
-<h1><?= $cpr->getType(); ?> Requirement <?= $cpr->getName();?><?= $planAnchor; ?></h1>
+<h1><?= $cpr_type ?> Requirement <?= $cpr->getNumber();?><?= $planAnchor; ?></h1>
 
         <?php qsc_cmp_display_property_columns(array(
             "Units" => $cpr->getUnits(),
@@ -84,7 +87,23 @@ else:
             "Text" => $cpr->getText(QSC_CMP_TEXT_NONE_SPECIFIED),
             "Notes" => $cpr->getNotes(QSC_CMP_TEXT_NONE_SPECIFIED)            
             )
-        ); ?>
+        ); 
+        
+        if ($cpr->hasSubLists()) : 
+            $child_cpr_list_array = $cpr->getChildCPRListArray(); 
+        
+            $list_names = $cpr->getSubListNamesHTML($parent_cpr_list->getNumber());            
+            $lists_required = $cpr->getSubListsRequiredHTML(true); ?>
+
+<h2>Sub-lists</h2>
+
+<p><?= $lists_required ?> of <?= $cpr_type ?> Lists <?= $list_names ?> must be satisfied for this requirement.</td>
+
+        <?php foreach ($child_cpr_list_array as $child_cpr_list) {
+            qsc_cmp_display_cpr_table($child_cpr_list, $db_curriculum);
+        }
+        
+        else: ?>
 
 <h2>Learning Outcome Analysis</h2>
         <?php if (! $courselist) : ?>
@@ -178,6 +197,7 @@ else:
 </table>
 
         <?php
+        endif;
         endif;
     endif;
 endif;

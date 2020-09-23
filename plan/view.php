@@ -60,14 +60,12 @@ else :
         $pllo_array = array();
         
         $type_number = 1;
-        $cpr_type_array = CMD::getCPRTypes();
-        $tpr_type_array = CMD::getTPRTypes();
 
         // Determine the type text, especially with respect to any possible
         // parent plan
         $type_text = $plan->getType();
         if ($plan->isSubPlan()) {
-            $parent_plan = $db_curriculum->getParentPlan($plan_id);
+            $parent_plan = $db_curriculum->getAncestorPlanForPlan($plan_id);
             $type_text = "$type_text for ".$parent_plan->getAnchorToView();
         }
         
@@ -75,7 +73,7 @@ else :
             QSC_CORE_QUERY_STRING_NAME_PLAN_ID, $plan_id);                 
         ?>
 
-<h1><?= $plan->getName();?></h1>
+<h1><?= $plan->getName() ?></h1>
 
 <div class="row">
     <div class="col-auto">

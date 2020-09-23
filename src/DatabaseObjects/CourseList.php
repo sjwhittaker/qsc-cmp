@@ -122,7 +122,7 @@ abstract class CourseList extends DatabaseObject {
     protected $childCourseListArray = array();
     
     // Stored in the courselist_and_courselist_level table
-    protected $level = CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE;
+    protected $level = CMD::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE;
     protected $orAbove = false;
        
     
@@ -282,7 +282,7 @@ abstract class CourseList extends DatabaseObject {
      * @return type
      */
     public function hasLevel() {
-        return ($this->level != CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE);
+        return ($this->level != CMD::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE);
     }
     
     /**

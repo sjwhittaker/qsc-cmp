@@ -33,6 +33,7 @@ use DatabaseObjects\CourseEntry;
 use DatabaseObjects\CourseList;
 use DatabaseObjects\CourseLevelLearningOutcome as CLLO;
 use DatabaseObjects\CoursePlanRequirement as CPR;
+use DatabaseObjects\CPRList;
 use DatabaseObjects\DatabaseObject;
 use DatabaseObjects\Degree;
 use DatabaseObjects\DegreeLevelExpectation as DLE;
@@ -50,6 +51,7 @@ use DatabaseObjects\RelationshipCourseList;
 use DatabaseObjects\Revision;
 use DatabaseObjects\SubjectCourseList;
 use DatabaseObjects\TextPlanRequirement as TPR;
+use DatabaseObjects\TPRList;
 use DatabaseObjects\User;
 
 use Managers\SessionManager;
@@ -111,22 +113,22 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_COURSELIST_NOTES = "notes";
     public const TABLE_COURSELIST_NOTES_MAX_LENGTH = 500;
 
-    public const TABLE_COURSELIST_AND_COURSE = "courselist_and_course";
-    public const TABLE_COURSELIST_AND_COURSE_COURSELIST_ID = "courselist_id";
-    public const TABLE_COURSELIST_AND_COURSE_COURSE_ID = "course_id";
+    public const TABLE_COURSELIST_TO_COURSE = "courselist_to_course";
+    public const TABLE_COURSELIST_TO_COURSE_PARENT_COURSELIST_ID = "parent_courselist_id";
+    public const TABLE_COURSELIST_TO_COURSE_CHILD_COURSE_ID = "child_course_id";
 
-    public const TABLE_COURSELIST_AND_COURSELIST = "courselist_and_courselist";
-    public const TABLE_COURSELIST_AND_COURSELIST_PARENT_ID = "parent_id";
-    public const TABLE_COURSELIST_AND_COURSELIST_CHILD_ID = "child_id";
-    public const TABLE_COURSELIST_AND_COURSELIST_LEVEL = "level";
-    public const TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE = "None";
-    public const TABLE_COURSELIST_AND_COURSELIST_LEVEL_P = "P";
-    public const TABLE_COURSELIST_AND_COURSELIST_LEVEL_100 = "100";
-    public const TABLE_COURSELIST_AND_COURSELIST_LEVEL_200 = "200";
-    public const TABLE_COURSELIST_AND_COURSELIST_LEVEL_300 = "300";
-    public const TABLE_COURSELIST_AND_COURSELIST_LEVEL_400 = "400";
-    public const TABLE_COURSELIST_AND_COURSELIST_LEVEL_500 = "500";
-    public const TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE = "or_above";
+    public const TABLE_COURSELIST_TO_COURSELIST = "courselist_to_courselist";
+    public const TABLE_COURSELIST_TO_COURSELIST_PARENT_ID = "parent_id";
+    public const TABLE_COURSELIST_TO_COURSELIST_CHILD_ID = "child_id";
+    public const TABLE_COURSELIST_TO_COURSELIST_LEVEL = "level";
+    public const TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE = "None";
+    public const TABLE_COURSELIST_TO_COURSELIST_LEVEL_P = "P";
+    public const TABLE_COURSELIST_TO_COURSELIST_LEVEL_100 = "100";
+    public const TABLE_COURSELIST_TO_COURSELIST_LEVEL_200 = "200";
+    public const TABLE_COURSELIST_TO_COURSELIST_LEVEL_300 = "300";
+    public const TABLE_COURSELIST_TO_COURSELIST_LEVEL_400 = "400";
+    public const TABLE_COURSELIST_TO_COURSELIST_LEVEL_500 = "500";
+    public const TABLE_COURSELIST_TO_COURSELIST_OR_ABOVE = "or_above";
         
     public const TABLE_COURSELIST_AND_RELATIONSHIP = "courselist_and_relationship";
     public const TABLE_COURSELIST_AND_RELATIONSHIP_COURSELIST_ID = "courselist_id";
@@ -142,17 +144,12 @@ class CurriculumMappingDatabase extends DatabaseManager {
         
     public const TABLE_CPR = "cpr";
     public const TABLE_CPR_ID = "id";
-    public const TABLE_CPR_NAME = "name";
-    public const TABLE_CPR_NAME_MAX_LENGTH = 10;
-    public const TABLE_CPR_TYPE_CORE = "Core";
-    public const TABLE_CPR_TYPE_OPTION = "Option";
-    public const TABLE_CPR_TYPE_SUPPPORTING = "Supporting";
+    public const TABLE_CPR_NUMBER = "number";
+    public const TABLE_CPR_NUMBER_MAX_LENGTH = 10;
     public const TABLE_CPR_UNITS = "units";
     public const TABLE_CPR_CONNECTOR = "connector";
     public const TABLE_CPR_CONNECTOR_FROM = "from";
     public const TABLE_CPR_CONNECTOR_IN = "in";
-    public const TABLE_CPR_TYPE = "type";
-    public const TABLE_CPR_TYPE_MAX_LENGTH = 50;
     public const TABLE_CPR_TEXT = "text";
     public const TABLE_CPR_TEXT_MAX_LENGTH = 100;
     public const TABLE_CPR_NOTES = "notes";
@@ -163,16 +160,41 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_CPR_AND_COURSELIST = "cpr_and_courselist";
     public const TABLE_CPR_AND_COURSELIST_CPR_ID = "cpr_id";
     public const TABLE_CPR_AND_COURSELIST_COURSELIST_ID = "courselist_id";
-    public const TABLE_CPR_AND_COURSELIST_LEVEL = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL;
-    public const TABLE_CPR_AND_COURSELIST_LEVEL_NONE = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE;
-    public const TABLE_CPR_AND_COURSELIST_LEVEL_P = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_P;
-    public const TABLE_CPR_AND_COURSELIST_LEVEL_100 = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_100;
-    public const TABLE_CPR_AND_COURSELIST_LEVEL_200 = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_200;
-    public const TABLE_CPR_AND_COURSELIST_LEVEL_300 = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_300;
-    public const TABLE_CPR_AND_COURSELIST_LEVEL_400 = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_400;
-    public const TABLE_CPR_AND_COURSELIST_LEVEL_500 = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_500;
-    public const TABLE_CPR_AND_COURSELIST_OR_ABOVE = self::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE;
-        
+    public const TABLE_CPR_AND_COURSELIST_LEVEL = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL;
+    public const TABLE_CPR_AND_COURSELIST_LEVEL_NONE = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE;
+    public const TABLE_CPR_AND_COURSELIST_LEVEL_P = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_P;
+    public const TABLE_CPR_AND_COURSELIST_LEVEL_100 = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_100;
+    public const TABLE_CPR_AND_COURSELIST_LEVEL_200 = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_200;
+    public const TABLE_CPR_AND_COURSELIST_LEVEL_300 = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_300;
+    public const TABLE_CPR_AND_COURSELIST_LEVEL_400 = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_400;
+    public const TABLE_CPR_AND_COURSELIST_LEVEL_500 = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_500;
+    public const TABLE_CPR_AND_COURSELIST_OR_ABOVE = self::TABLE_COURSELIST_TO_COURSELIST_OR_ABOVE;
+    
+    public const TABLE_CPR_TO_CPRLIST = "cpr_to_cprlist";
+    public const TABLE_CPR_TO_CPRLIST_PARENT_CPR_ID = "parent_cpr_id";
+    public const TABLE_CPR_TO_CPRLIST_CHILD_CPRLIST_ID = "child_cprlist_id";    
+    
+    public const TABLE_CPRLIST = "cprlist";
+    public const TABLE_CPRLIST_ID = "id";
+    public const TABLE_CPRLIST_NUMBER = "number";
+    public const TABLE_CPRLIST_NUMBER_MAX_LENGTH = 10;
+    public const TABLE_CPRLIST_TYPE = "type";
+    public const TABLE_CPRLIST_TYPE_MAX_LENGTH = 100;
+    public const TABLE_CPRLIST_NOTES = "notes";
+    public const TABLE_CPRLIST_NOTES_MAX_LENGTH = 500;
+
+    public const TABLE_CPRLIST_TO_CPR = "cprlist_to_cpr";
+    public const TABLE_CPRLIST_TO_CPR_PARENT_CPRLIST_ID = "parent_cprlist_id";
+    public const TABLE_CPRLIST_TO_CPR_CHILD_CPR_ID = "child_cpr_id";
+
+    public const TABLE_CPRLIST_TO_CPRLIST = "cprlist_to_cprlist";
+    public const TABLE_CPRLIST_TO_CPRLIST_PARENT_ID = "parent_id";
+    public const TABLE_CPRLIST_TO_CPRLIST_CHILD_ID = "child_id";
+
+    public const TABLE_CPRLIST_TO_PLAN = "cprlist_to_plan";
+    public const TABLE_CPRLIST_TO_PLAN_PARENT_CPRLIST_ID = "parent_cprlist_id";
+    public const TABLE_CPRLIST_TO_PLAN_CHILD_PLAN_ID = "child_plan_id";    
+
     public const TABLE_DEGREE = "degree";
     public const TABLE_DEGREE_ID = "id";
     public const TABLE_DEGREE_NAME = "name";
@@ -254,27 +276,25 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_PLAN_TYPE_GENERAL = "General";
     public const TABLE_PLAN_TYPE_SUB_PLAN = "Sub-Plan";
     public const TABLE_PLAN_INTERNSHIP = "internship";
-    public const TABLE_PLAN_PRIOR_TO = "prior_to";
     public const TABLE_PLAN_TEXT = "text";
     public const TABLE_PLAN_TEXT_MAX_LENGTH = 500;    
+    public const TABLE_PLAN_PRIOR_TO = "prior_to";
+    public const TABLE_PLAN_NUMBER = "number";
+    public const TABLE_PLAN_NUMBER_MAX_LENGTH = 10;    
     public const TABLE_PLAN_NOTES = "notes";
     public const TABLE_PLAN_NOTES_MAX_LENGTH = 500;    
-
-    public const TABLE_PLAN_AND_PLAN = "plan_and_plan";
-    public const TABLE_PLAN_AND_PLAN_PARENT_ID = "parent_id";
-    public const TABLE_PLAN_AND_PLAN_CHILD_ID = "child_id";    
     
     public const TABLE_PLAN_AND_PLLO = "plan_and_pllo";
     public const TABLE_PLAN_AND_PLLO_PLAN_ID = "plan_id";
     public const TABLE_PLAN_AND_PLLO_PLLO_ID = "pllo_id";
     
-    public const TABLE_PLAN_AND_CPR = "plan_and_cpr";
-    public const TABLE_PLAN_AND_CPR_PLAN_ID = "plan_id";
-    public const TABLE_PLAN_AND_CPR_CPR_ID = "cpr_id";
+    public const TABLE_PLAN_TO_CPRLIST = "plan_to_cprlist";
+    public const TABLE_PLAN_TO_CPRLIST_PARENT_PLAN_ID = "parent_plan_id";
+    public const TABLE_PLAN_TO_CPRLIST_CHILD_CPRLIST_ID = "child_cprlist_id";
 
-    public const TABLE_PLAN_AND_TPR = "plan_and_tpr";
-    public const TABLE_PLAN_AND_TPR_PLAN_ID = "plan_id";
-    public const TABLE_PLAN_AND_TPR_TPR_ID = "tpr_id";    
+    public const TABLE_PLAN_TO_TPRLIST = "plan_to_tprlist";
+    public const TABLE_PLAN_TO_TPRLIST_PARENT_PLAN_ID = "parent_plan_id"; 
+    public const TABLE_PLAN_TO_TPRLIST_CHILD_TPRLIST_ID = "child_tprlist_id";
     
     public const TABLE_PLLO = "pllo";
     public const TABLE_PLLO_ID = "id";
@@ -336,17 +356,30 @@ class CurriculumMappingDatabase extends DatabaseManager {
     
     public const TABLE_TPR = "tpr";
     public const TABLE_TPR_ID = "id";
-    public const TABLE_TPR_NAME = "name";
-    public const TABLE_TPR_NAME_MAX_LENGTH = 10;
-    public const TABLE_TPR_TYPE = "type";
-    public const TABLE_TPR_TYPE_ADDITIONAL = "Additional";
-    public const TABLE_TPR_TYPE_SUBSTITUTIONS = "Substitutions";
-    public const TABLE_TPR_TYPE_NOTES = "Notes";
+    public const TABLE_TPR_NUMBER = "number";
+    public const TABLE_TPR_NUMBER_MAX_LENGTH = 10;
     public const TABLE_TPR_TEXT = "text";
     public const TABLE_TPR_TEXT_MAX_LENGTH = 750;
     public const TABLE_TPR_NOTES = "notes";
     public const TABLE_TPR_NOTES_MAX_LENGTH = 500;
+    
+    public const TABLE_TPRLIST = "tprlist";
+    public const TABLE_TPRLIST_ID = "id";
+    public const TABLE_TPRLIST_NUMBER = "number";
+    public const TABLE_TPRLIST_NUMBER_MAX_LENGTH = 10;
+    public const TABLE_TPRLIST_TYPE = "type";
+    public const TABLE_TPRLIST_TYPE_MAX_LENGTH = 100;
+    public const TABLE_TPRLIST_NOTES = "notes";
+    public const TABLE_TPRLIST_NOTES_MAX_LENGTH = 500;
 
+    public const TABLE_TPRLIST_TO_TPR = "tprlist_to_tpr";
+    public const TABLE_TPRLIST_TO_TPR_PARENT_TPRLIST_ID = "parent_tprlist_id";
+    public const TABLE_TPRLIST_TO_TPR_CHILD_TPR_ID = "child_tpr_id";
+
+    public const TABLE_TPRLIST_TO_TPRLIST = "tprlist_to_tprlist";
+    public const TABLE_TPRLIST_TO_TPRLIST_PARENT_ID = "parent_id";
+    public const TABLE_TPRLIST_TO_TPRLIST_CHILD_ID = "child_id";
+    
     public const TABLE_USER = "user";
     public const TABLE_USER_ID = "id";
     public const TABLE_USER_FIRST_NAME = "first_name";
@@ -383,12 +416,12 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return type
      */
     public static function getCourseListLevels() {
-        return array(self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_P,
-            self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_100,
-            self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_200,
-            self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_300,
-            self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_400,
-            self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_500);        
+        return array(self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_P,
+            self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_100,
+            self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_200,
+            self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_300,
+            self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_400,
+            self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_500);        
     }
     
     /**
@@ -408,17 +441,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         return array(self::TABLE_CPR_CONNECTOR_FROM,
             self::TABLE_CPR_CONNECTOR_IN);
     }
-    
-    /**
-     * 
-     * @return type
-     */
-    public static function getCPRTypes() {
-        return array(self::TABLE_CPR_TYPE_CORE, 
-            self::TABLE_CPR_TYPE_OPTION,
-            self::TABLE_CPR_TYPE_SUPPPORTING);
-    }
-    
+        
     /**
      * 
      * @return type
@@ -446,28 +469,18 @@ class CurriculumMappingDatabase extends DatabaseManager {
     
     /**
      * 
-     * @return type
-     */
-    public static function getTPRTypes() {
-        return array(self::TABLE_TPR_TYPE_ADDITIONAL, 
-            self::TABLE_TPR_TYPE_SUBSTITUTIONS, 
-            self::TABLE_TPR_TYPE_NOTES);
-    }
-    
-    /**
-     * 
      * @param type $level
      * @param type $orAbove
      * @return string
      */
     public static function getCourseLevelCondition(
-        $level = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
+        $level = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
         $orAbove = false) {
         
         $course = self::TABLE_COURSE;
         $courseNumber = self::TABLE_COURSE_NUMBER;
-        $courseLevelP = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_P;
-        $courseLevelNone = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE;
+        $courseLevelP = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_P;
+        $courseLevelNone = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE;
         
         // NOTE: 'P or above' is the same as no condition as P is the 
         // lowest level                     
@@ -495,13 +508,13 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return string
      */
     public static function getCourseListLevelCondition($table, 
-        $level = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
+        $level = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
         $orAbove = false) {
         
-        $cacLevel = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL;
-        $cacOrAbove = self::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE;
+        $cacLevel = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL;
+        $cacOrAbove = self::TABLE_COURSELIST_TO_COURSELIST_OR_ABOVE;
         
-        if ($level == self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE) {
+        if ($level == self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE) {
             return '';
         }
         
@@ -521,12 +534,12 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return type
      */
     public static function getCourseListLevelArguments(
-        $level = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
+        $level = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
         $orAbove = false) {
         $argumentArray = array();
         
         // Create a level condition based on the parameters
-        if ($level != self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE) {
+        if ($level != self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE) {
             $argumentArray[] = $level;
             if ($orAbove) {
                 $argumentArray[] = $orAbove;
@@ -703,7 +716,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      *                   subject
      */
     public function getCoursesWithSubject($subjectValue, 
-        $levelValue = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
+        $levelValue = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
         $orAboveValue = false) {
         $course = self::TABLE_COURSE;
         $id = self::TABLE_COURSE_ID;
@@ -1133,48 +1146,8 @@ class CurriculumMappingDatabase extends DatabaseManager {
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array()),
             'Plan');
-    }    
-    
-    /**
-     * 
-     * @param type $planIDValue
-     * @return type
-     */
-    public function getSubPlans($planIDValue) {
-        $plan = self::TABLE_PLAN;
-        $planID = self::TABLE_PLAN_ID;
-        $planName = self::TABLE_PLAN_NAME;
-
-        $pap = self::TABLE_PLAN_AND_PLAN;
-        $papParentID = self::TABLE_PLAN_AND_PLAN_PARENT_ID;
-        $papChildID = self::TABLE_PLAN_AND_PLAN_CHILD_ID;
-
-        $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pap WHERE $pap.$papParentID = ?) AS $pap ON $plan.$planID = $pap.$papChildID ORDER BY $plan.$planName ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($planIDValue)),
-            'Plan');
-    }
-    
-    /**
-     * 
-     * @param type $planIDValue
-     * @return type
-     */
-    public function getParentPlan($planIDValue) {
-        $plan = self::TABLE_PLAN;
-        $planID = self::TABLE_PLAN_ID;
-        $planName = self::TABLE_PLAN_NAME;
-
-        $pap = self::TABLE_PLAN_AND_PLAN;
-        $papParentID = self::TABLE_PLAN_AND_PLAN_PARENT_ID;
-        $papChildID = self::TABLE_PLAN_AND_PLAN_CHILD_ID;
-
-        $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pap WHERE $pap.$papChildID = ?) AS $pap ON $plan.$planID = $pap.$papParentID";
-        return $this->createObjectFromDatabaseRow(
-            $this->getQueryResult($query, array($planIDValue)),
-            'Plan');
-    }    
-
+    }       
+        
     
     /**************************************************************************
      * Plan Requiremments and Course Lists
@@ -1185,57 +1158,28 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @param type $cprTypeValue
      * @return type
      */
-    public function getCPRsForPlan($planIDValue, $cprTypeValue = null) {
-        $cpr = self::TABLE_CPR;
-        $cprID = self::TABLE_CPR_ID;
-        $cprName = self::TABLE_CPR_NAME;
-        $cprType = self::TABLE_CPR_TYPE;
+    public function getChildCPRListsForPlan($planIDValue, $cprlTypeValue = null) {
+        $cprl = self::TABLE_CPRLIST;
+        $cprlID = self::TABLE_CPRLIST_ID;
+        $cprlNumber = self::TABLE_CPRLIST_NUMBER;
+        $cprlType = self::TABLE_CPRLIST_TYPE;
         
-        $pac = self::TABLE_PLAN_AND_CPR;
-        $pacPlanID = self::TABLE_PLAN_AND_CPR_PLAN_ID;
-        $pacCPRID = self::TABLE_PLAN_AND_CPR_CPR_ID;
+        $pac = self::TABLE_PLAN_TO_CPRLIST;
+        $pacPlanID = self::TABLE_PLAN_TO_CPRLIST_PARENT_PLAN_ID;
+        $pacCPRListID = self::TABLE_PLAN_TO_CPRLIST_CHILD_CPRLIST_ID;
         
-        $cprTable = $cpr;
+        $cprlTable = $cprl;
         $valueArray = array($planIDValue);
-        if ($cprTypeValue) {
-            $cprTable = "(SELECT * FROM $cpr WHERE $cpr.$cprType = ?) AS $cpr";
-            $valueArray = array($cprTypeValue, $planIDValue);
+        if ($cprlTypeValue) {
+            $cprlTable = "(SELECT * FROM $cprl WHERE $cprl.$cprlType = ?) AS $cprl";
+            $valueArray = array($cprlTypeValue, $planIDValue);
         }
 
-        $query = "SELECT $cpr.* FROM $cprTable JOIN (SELECT * FROM $pac WHERE $pac.$pacPlanID = ?) AS $pac ON $cpr.$cprID = $pac.$pacCPRID ORDER BY $cpr.$cprType, $cpr.$cprName ASC";
+        $query = "SELECT $cprl.* FROM $cprlTable JOIN (SELECT * FROM $pac WHERE $pac.$pacPlanID = ?) AS $pac ON $cprl.$cprlID = $pac.$pacCPRListID ORDER BY $cprl.$cprlNumber ASC";
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, $valueArray), 
-            'CoursePlanRequirement');        
+            'CPRList');        
     }
-    
-    /**
-     * 
-     * @param type $planIDValue
-     * @param type $tprTypeValue
-     * @return type
-     */
-    public function getTPRsForPlan($planIDValue, $tprTypeValue = null) {
-        $tpr = self::TABLE_TPR;
-        $tprID = self::TABLE_TPR_ID;
-        $tprName = self::TABLE_TPR_NAME;
-        $tprType = self::TABLE_TPR_TYPE;
-        
-        $pat = self::TABLE_PLAN_AND_TPR;
-        $patPlanID = self::TABLE_PLAN_AND_TPR_PLAN_ID;
-        $patTPRID = self::TABLE_PLAN_AND_TPR_TPR_ID;
-        
-        $tprTable = $tpr;
-        $valueArray = array($planIDValue);
-        if ($tprTypeValue) {
-            $tprTable = "(SELECT * FROM $tpr WHERE $tpr.$tprType = ?) AS $tpr";
-            $valueArray = array($tprTypeValue, $planIDValue);
-        }
-
-        $query = "SELECT $tpr.* FROM $tprTable JOIN (SELECT * FROM $pat WHERE $pat.$patPlanID = ?) AS $pat ON $tpr.$tprID = $pat.$patTPRID ORDER BY $tpr.$tprType, $tpr.$tprName ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, $valueArray), 
-            'TextPlanRequirement');        
-    }    
     
     /**
      * 
@@ -1243,47 +1187,337 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @param type $cprTypeValue
      * @return type
      */
-    public function getTotalUnitsInPlan($planIDValue, $cprTypeValue = null) {
+    public function getParentCPRListForCPR($cprIDValue) {
         $cpr = self::TABLE_CPR;
         $cprID = self::TABLE_CPR_ID;
-        $cprType = self::TABLE_CPR_TYPE;
-        $cprUnits = self::TABLE_CPR_UNITS;
+        $cprNumber = self::TABLE_CPR_NUMBER;        
         
-        $pac = self::TABLE_PLAN_AND_CPR;
-        $pacPlanID = self::TABLE_PLAN_AND_CPR_PLAN_ID;
-        $pacCPRID = self::TABLE_PLAN_AND_CPR_CPR_ID;
-        
-        $cprTable = $cpr;
-        $valueArray = array($planIDValue);
-        if ($cprTypeValue) {
-            $cprTable = "(SELECT * FROM $cpr WHERE $cpr.$cprType = ?) AS $cpr";
-            $valueArray = array($cprTypeValue, $planIDValue);
-        }
+        $cac = self::TABLE_CPRLIST_TO_CPR;
+        $cacCPRListID = self::TABLE_CPRLIST_TO_CPR_PARENT_CPRLIST_ID;
+        $cacCPRID = self::TABLE_CPRLIST_TO_CPR_CHILD_CPR_ID;
 
-        $query = "SELECT SUM($cpr.$cprUnits) FROM $cprTable JOIN (SELECT * FROM $pac WHERE $pac.$pacPlanID = ?) AS $pac ON $cpr.$cprID = $pac.$pacCPRID";
-        $result_array = $this->getQueryResult($query, $valueArray);
-        return reset($result_array);        
-    }            
+        $cprl = self::TABLE_CPRLIST;
+        $cprlID = self::TABLE_CPRLIST_ID;
+        $cprlNumber = self::TABLE_CPRLIST_NUMBER;
+        $cprlType = self::TABLE_CPRLIST_TYPE;
+        
+        $query = "SELECT $cprl.* FROM $cprl JOIN (SELECT * FROM $cac WHERE $cac.$cacCPRID = ?) AS $cac ON $cprl.$cprlID = $cac.$cacCPRListID";
+        return $this->createObjectFromDatabaseRow(
+            $this->getQueryResult($query, array($cprIDValue)), 
+            'CPRList');        
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public function getTypeForCPR($cprIDValue) {        
+        $cac = self::TABLE_CPRLIST_TO_CPR;
+        $cacCPRListID = self::TABLE_CPRLIST_TO_CPR_PARENT_CPRLIST_ID;
+        $cacCPRID = self::TABLE_CPRLIST_TO_CPR_CHILD_CPR_ID;
+
+        $cprl = self::TABLE_CPRLIST;
+        $cprlID = self::TABLE_CPRLIST_ID;
+        $cprlType = self::TABLE_CPRLIST_TYPE;
+        
+        $query = "SELECT $cprl.$cprlType FROM $cprl JOIN (SELECT * FROM $cac WHERE $cac.$cacCPRID = ?) AS $cac ON $cprl.$cprlID = $cac.$cacCPRListID";
+        $result = $this->getQueryResult($query, array($cprIDValue));
+        
+        return (! empty($result)) ? $result[$cprlType] : '';
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public function getTypeForTPR($tprIDValue) {        
+        $tat = self::TABLE_TPRLIST_TO_TPR;
+        $tatTPRListID = self::TABLE_TPRLIST_TO_TPR_PARENT_TPRLIST_ID;
+        $tatTPRID = self::TABLE_TPRLIST_TO_TPR_CHILD_TPR_ID;
+
+        $tprl = self::TABLE_TPRLIST;
+        $tprlID = self::TABLE_TPRLIST_ID;
+        $tprlType = self::TABLE_TPRLIST_TYPE;
+        
+        $query = "SELECT $tprl.$tprlType FROM $tprl JOIN (SELECT * FROM $tat WHERE $tat.$tatTPRID = ?) AS $tat ON $tprl.$tprlID = $tat.$tatTPRListID";
+        $result = $this->getQueryResult($query, array($tprIDValue));
+        
+        return (! empty($result)) ? $result[$tprlType] : '';
+    }     
+    
+    /**
+     * 
+     * @param type $cprListIDValue
+     * @return type
+     */
+    public function getChildCPRsForCPRList($cprListIDValue) {
+        $cpr = self::TABLE_CPR;
+        $cprID = self::TABLE_CPR_ID;
+        $cprNumber = self::TABLE_CPR_NUMBER;        
+        
+        $cac = self::TABLE_CPRLIST_TO_CPR;
+        $cacCPRListID = self::TABLE_CPRLIST_TO_CPR_PARENT_CPRLIST_ID;
+        $cacCPRID = self::TABLE_CPRLIST_TO_CPR_CHILD_CPR_ID;
+        
+        $query = "SELECT $cpr.* FROM $cpr JOIN (SELECT * FROM $cac WHERE $cac.$cacCPRListID = ?) AS $cac ON $cpr.$cprID = $cac.$cacCPRID ORDER BY $cpr.$cprNumber ASC";        
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($cprListIDValue)), 
+            'CoursePlanRequirement');
+    }
+    
+    /**
+     * 
+     * @param type $cprListIDValue
+     * @return type
+     */
+    public function getChildPlansInCPRList($cprListIDValue) {
+        $plan = self::TABLE_PLAN;
+        $planID = self::TABLE_PLAN_ID;
+        $planNumber = self::TABLE_PLAN_NUMBER;        
+        $planCode = self::TABLE_PLAN_CODE;        
+        
+        $cap = self::TABLE_CPRLIST_TO_PLAN;
+        $capCPRListID = self::TABLE_CPRLIST_TO_PLAN_PARENT_CPRLIST_ID;
+        $capPlanID = self::TABLE_CPRLIST_TO_PLAN_CHILD_PLAN_ID;
+        
+        $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $cap WHERE $cap.$capCPRListID = ?) AS $cap ON $plan.$planID = $cap.$capPlanID ORDER BY $plan.$planNumber, $plan.$planCode ASC";        
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($cprListIDValue)), 
+            'Plan');
+    }    
+
+    /**
+     * 
+     * @param type $cprListIDValue
+     * @return type
+     */
+    public function getChildCPRListsForCPRList($cprListIDValue) {
+        $cprl = self::TABLE_CPRLIST;
+        $cprlID = self::TABLE_CPRLIST_ID;
+        $cprlNumber = self::TABLE_CPRLIST_NUMBER;
+
+        $cac = self::TABLE_CPRLIST_TO_CPRLIST;
+        $cacParentID = self::TABLE_CPRLIST_TO_CPRLIST_PARENT_ID;
+        $cacChildID = self::TABLE_CPRLIST_TO_CPRLIST_CHILD_ID;
+
+        $query = "SELECT $cprl.* FROM $cprl JOIN (SELECT * FROM $cac WHERE $cac.$cacParentID = ?) AS $cac ON $cprl.$cprlID = $cac.$cacChildID ORDER BY $cprl.$cprlNumber ASC";
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($cprListIDValue)),
+            'CPRList');
+    }
     
     /**
      * 
      * @param type $cprIDValue
      * @return type
      */
-    public function getPlanForCPR($cprIDValue) {
+    public function getChildCPRListsForCPR($cprIDValue) {
+        $cprl = self::TABLE_CPRLIST;
+        $cprlID = self::TABLE_CPRLIST_ID;
+        $cprlNumber = self::TABLE_CPRLIST_NUMBER;
+
+        $cac = self::TABLE_CPR_TO_CPRLIST;
+        $cacParentCPRID = self::TABLE_CPR_TO_CPRLIST_PARENT_CPR_ID;
+        $cacChildCPRListID = self::TABLE_CPR_TO_CPRLIST_CHILD_CPRLIST_ID;
+
+        $query = "SELECT $cprl.* FROM $cprl JOIN (SELECT * FROM $cac WHERE $cac.$cacParentCPRID = ?) AS $cac ON $cprl.$cprlID = $cac.$cacChildCPRListID ORDER BY $cprl.$cprlNumber ASC";
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($cprIDValue)),
+            'CPRList');
+    }    
+    
+    /**
+     * This function might return a CPR, a CPRList or a Plan
+     * 
+     * @param type $cprListIDValue
+     * @return type
+     */
+    public function getAncestorPlanForCPRList($cprListIDValue) {
+        $cprl = self::TABLE_CPRLIST;
+        $cprlID = self::TABLE_CPRLIST_ID;
+        $cprlNumber = self::TABLE_CPRLIST_NUMBER;
+                
+        $pac = self::TABLE_PLAN_TO_CPRLIST;
+        $pacPlanID = self::TABLE_PLAN_TO_CPRLIST_PARENT_PLAN_ID;
+        $pacCPRListID = self::TABLE_PLAN_TO_CPRLIST_CHILD_CPRLIST_ID;
+
+        $clacl = self::TABLE_CPRLIST_TO_CPRLIST;
+        $claclParentID = self::TABLE_CPRLIST_TO_CPRLIST_PARENT_ID;
+        $claclChildID = self::TABLE_CPRLIST_TO_CPRLIST_CHILD_ID;
+
+        $cacl = self::TABLE_CPR_TO_CPRLIST;
+        $caclParentCPRID = self::TABLE_CPR_TO_CPRLIST_PARENT_CPR_ID;
+        $caclChildCPLID = self::TABLE_CPR_TO_CPRLIST_CHILD_CPRLIST_ID;
+        
+        // The most likely option is that the parent is a Plan
+        $query = "SELECT $pacPlanID FROM $pac WHERE $pacCPRListID = ?";                
+        $result = $this->getQueryResult($query, array($cprListIDValue));
+        if (! empty($result)) {
+            return $this->getPlanFromID($result[$pacPlanID]);
+        }
+        
+        // The second most likely option is that the parent is another CPRList
+        // and we'll need need the Plan from that one
+        $query = "SELECT $claclParentID FROM $clacl WHERE $claclChildID = ?";                
+        $result = $this->getQueryResult($query, array($cprListIDValue));
+        if (! empty($result)) {
+            return $this->getAncestorPlanForCPRList($result[$claclParentID]);
+        }
+        
+        // The last option is that the parent is a CPR and we'll need its Plan
+        $query = "SELECT $caclParentCPRID FROM $cacl WHERE $caclChildCPLID = ?";                
+        $result = $this->getQueryResult($query, array($cprListIDValue));
+        return (! empty($result)) ?
+            $this->getAncestorPlanForCPR($result[$caclParentCPRID]) :
+            null;        
+    }
+            
+    /**
+     * 
+     * @param type $planIDValue
+     * @param type $tprTypeValue
+     * @return type
+     */
+    public function getChildTPRListsForPlan($planIDValue, $tprlTypeValue = null) {
+        $tprl = self::TABLE_TPRLIST;
+        $tprlID = self::TABLE_TPRLIST_ID;
+        $tprlNumber = self::TABLE_TPRLIST_NUMBER;
+        $tprlType = self::TABLE_TPRLIST_TYPE;
+        
+        $pac = self::TABLE_PLAN_TO_TPRLIST;
+        $pacPlanID = self::TABLE_PLAN_TO_TPRLIST_PARENT_PLAN_ID;
+        $pacTPRListID = self::TABLE_PLAN_TO_TPRLIST_CHILD_TPRLIST_ID;
+        
+        $tprlTable = $tprl;
+        $valueArray = array($planIDValue);
+        if ($tprlTypeValue) {
+            $tprlTable = "(SELECT * FROM $tprl WHERE $tprl.$tprlType = ?) AS $tprl";
+            $valueArray = array($tprlTypeValue, $planIDValue);
+        }
+
+        $query = "SELECT $tprl.* FROM $tprlTable JOIN (SELECT * FROM $pac WHERE $pac.$pacPlanID = ?) AS $pac ON $tprl.$tprlID = $pac.$pacTPRListID ORDER BY $tprl.$tprlNumber ASC";
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, $valueArray), 
+            'TPRList');        
+    }
+    
+    /**
+     * 
+     * @param type $tprListIDValue
+     * @param type $levelValue
+     * @param type $orAboveValue
+     * @return type
+     */
+    public function getChildTPRsForTPRList($tprListIDValue) {
+        $tpr = self::TABLE_TPR;
+        $tprID = self::TABLE_TPR_ID;
+        $tprNumber = self::TABLE_TPR_NUMBER;        
+        
+        $tat = self::TABLE_TPRLIST_TO_TPR;
+        $tatTPRListID = self::TABLE_TPRLIST_TO_TPR_PARENT_TPRLIST_ID;
+        $tatTPRID = self::TABLE_TPRLIST_TO_TPR_CHILD_TPR_ID;
+        
+        $query = "SELECT $tpr.* FROM $tpr JOIN (SELECT * FROM $tat WHERE $tat.$tatTPRListID = ?) AS $tat ON $tpr.$tprID = $tat.$tatTPRID ORDER BY $tpr.$tprNumber ASC";
+        
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($tprListIDValue)), 
+            'TextPlanRequirement');
+    }
+
+    /**
+     * 
+     * @param type $tprListIDValue
+     * @return type
+     */
+    public function getChildTPRListsForTPRList($tprListIDValue) {
+        $tprl = self::TABLE_TPRLIST;
+        $tprlID = self::TABLE_TPRLIST_ID;
+        $tprlNumber = self::TABLE_TPRLIST_NUMBER;
+
+        $tat = self::TABLE_TPRLIST_TO_TPRLIST;
+        $tatParentID = self::TABLE_TPRLIST_TO_TPRLIST_PARENT_ID;
+        $tatChildID = self::TABLE_TPRLIST_TO_TPRLIST_CHILD_ID;
+
+        $query = "SELECT $tprl.* FROM $tprl JOIN (SELECT * FROM $tat WHERE $tat.$tatParentID = ?) AS $tat ON $tprl.$tprlID = $tat.$tatChildID ORDER BY $tprl.$tprlNumber ASC";
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($tprListIDValue)),
+            'TPRList');
+    }
+    
+    /**
+     * This function might return a TPRList or a Plan
+     * 
+     * @param type $tprListIDValue
+     * @return type
+     */
+    public function getParentForTPRList($tprListIDValue) {
+        $tprl = self::TABLE_TPRLIST;
+        $tprlID = self::TABLE_TPRLIST_ID;
+        $tprlNumber = self::TABLE_TPRLIST_NUMBER;
+                
+        $pat = self::TABLE_PLAN_TO_TPRLIST;
+        $patPlanID = self::TABLE_PLAN_TO_TPRLIST_PARENT_PLAN_ID;
+        $patTPRListID = self::TABLE_PLAN_TO_TPRLIST_CHILD_TPRLIST_ID;
+
+        $tlatl = self::TABLE_TPRLIST_TO_TPRLIST;
+        $tlatlParentID = self::TABLE_TPRLIST_TO_TPRLIST_PARENT_ID;
+        $tlatlChildID = self::TABLE_TPRLIST_TO_TPRLIST_CHILD_ID;
+        
+        // The most likely option is that the parent is a Plan
+        $query = "SELECT $patPlanID FROM $pat WHERE $patTPRListID = ?";                
+        $result = $this->getQueryResults($query, array($tprListIDValue));
+        if (! empty($result)) {
+            return $this->getPlanFromID($result[self::TABLE_PLAN_ID]);
+        }
+        
+        // The other option is that the parent is another TPRList
+        $query = "SELECT $tlatlParentID FROM $tlatl WHERE $tlatlChildID = ?";                
+        $result = $this->getQueryResults($query, array($tprListIDValue));
+        return (! empty($result)) ?
+            $this->getTPRFromID($result[self::TABLE_TPR_ID]) :
+            null;        
+    }         
+    
+    /**
+     * 
+     * @param type $cprIDValue
+     * @return type
+     */
+    public function getAncestorPlanForCPR($cprIDValue) {        
+        $cac = self::TABLE_CPRLIST_TO_CPR;
+        $cacCPRListID = self::TABLE_CPRLIST_TO_CPR_PARENT_CPRLIST_ID;
+        $cacCPRID = self::TABLE_CPRLIST_TO_CPR_CHILD_CPR_ID;
+                        
+        $query = "SELECT $cacCPRListID FROM $cac WHERE $cacCPRID = ?";
+        $result = $this->getQueryResult($query, array($cprIDValue));
+        return (! empty($result)) ?
+            $this->getAncestorPlanForCPRList($result[$cacCPRListID]) :
+            null;  
+    }
+    
+    /**
+     * 
+     * @param type $cprIDValue
+     * @return type
+     */
+    public function getAncestorPlanForPlan($planIDValue) {
         $plan = self::TABLE_PLAN;
         $planID = self::TABLE_PLAN_ID;
-        $planName = self::TABLE_PLAN_NAME;
         
-        $pac = self::TABLE_PLAN_AND_CPR;
-        $pacPlanID = self::TABLE_PLAN_AND_CPR_PLAN_ID;
-        $pacCPRID = self::TABLE_PLAN_AND_CPR_CPR_ID;
+        $ctp = self::TABLE_CPRLIST_TO_PLAN;
+        $ctpCPRListID = self::TABLE_CPRLIST_TO_PLAN_PARENT_CPRLIST_ID;
+        $ctpPlanID = self::TABLE_CPRLIST_TO_PLAN_CHILD_PLAN_ID;
+
+        $ptc = self::TABLE_PLAN_TO_CPRLIST;
+        $ptcPlanID = self::TABLE_PLAN_TO_CPRLIST_PARENT_PLAN_ID;
+        $ptcCPRListID = self::TABLE_PLAN_TO_CPRLIST_CHILD_CPRLIST_ID;
         
-        $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pac WHERE $pac.$pacCPRID = ?) AS $pac ON $plan.$planID = $pac.$pacPlanID ORDER BY $plan.$planName ASC";
+        $query = "SELECT $plan.* FROM (SELECT * FROM $ctp WHERE $ctp.$ctpPlanID = ?) AS $ctp JOIN $ptc ON $ctp.$ctpCPRListID = $ptc.$ptcCPRListID JOIN $plan ON $ptc.$ptcPlanID = $plan.$planID";
+        $result = $this->getQueryResult($query, array($planIDValue));
         return $this->createObjectFromDatabaseRow(
-            $this->getQueryResult($query, array($cprIDValue)),
-            'Plan');
-    }
+            $this->getQueryResult($query, array($planIDValue)),
+            'Plan');  
+    }    
 
     /**
      * 
@@ -1295,12 +1529,12 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $planID = self::TABLE_PLAN_ID;
         $planName = self::TABLE_PLAN_NAME;
         
-        $pat = self::TABLE_PLAN_AND_TPR;
-        $patPlanID = self::TABLE_PLAN_AND_TPR_PLAN_ID;
-        $patTPRID = self::TABLE_PLAN_AND_TPR_TPR_ID;
+        $pat = self::TABLE_PLAN_TO_TPRLIST;
+        $patPlanID = self::TABLE_PLAN_TO_TPRLIST_PARENT_PLAN_ID;
+        $patTPRID = self::TABLE_PLAN_TO_TPRLIST_CHILD_TPRLIST_ID;
         
         $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pat WHERE $pat.$patTPRID = ?) AS $pat ON $plan.$planID = $pat.$patPlanID ORDER BY $plan.$planName ASC";
-        return $this->createObjectFromDatabaseRows(
+        return $this->createObjectFromDatabaseRow(
             $this->getQueryResult($query, array($tprIDValue)),
             'Plan');
     }
@@ -1338,16 +1572,16 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return type
      */
     public function getCoursesInCourseList($courseListIDValue, 
-        $levelValue = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
+        $levelValue = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
         $orAboveValue = false) {
         $course = self::TABLE_COURSE;
         $courseID = self::TABLE_COURSE_ID;
         $courseSubject = self::TABLE_COURSE_SUBJECT;        
         $courseNumber = self::TABLE_COURSE_NUMBER;        
         
-        $cac = self::TABLE_COURSELIST_AND_COURSE;
-        $cacCourseListID = self::TABLE_COURSELIST_AND_COURSE_COURSELIST_ID;
-        $cacCourseID = self::TABLE_COURSELIST_AND_COURSE_COURSE_ID;
+        $cac = self::TABLE_COURSELIST_TO_COURSE;
+        $cacCourseListID = self::TABLE_COURSELIST_TO_COURSE_PARENT_COURSELIST_ID;
+        $cacCourseID = self::TABLE_COURSELIST_TO_COURSE_CHILD_COURSE_ID;
         
         $levelCondition = self::getCourseLevelCondition($levelValue, $orAboveValue);
         
@@ -1373,18 +1607,18 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $clID = self::TABLE_COURSELIST_ID;
         $clName = self::TABLE_COURSELIST_NAME;
 
-        $cac = self::TABLE_COURSELIST_AND_COURSELIST;
-        $cacParentID = self::TABLE_COURSELIST_AND_COURSELIST_PARENT_ID;
-        $cacChildID = self::TABLE_COURSELIST_AND_COURSELIST_CHILD_ID;
-        $cacLevel = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL;
-        $cacOrAbove = self::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE;
+        $cac = self::TABLE_COURSELIST_TO_COURSELIST;
+        $cacParentID = self::TABLE_COURSELIST_TO_COURSELIST_PARENT_ID;
+        $cacChildID = self::TABLE_COURSELIST_TO_COURSELIST_CHILD_ID;
+        $cacLevel = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL;
+        $cacOrAbove = self::TABLE_COURSELIST_TO_COURSELIST_OR_ABOVE;
 
         $query = "SELECT $cl.*, $cac.$cacLevel, $cac.$cacOrAbove FROM $cl JOIN (SELECT * FROM $cac WHERE $cac.$cacParentID = ?) AS $cac ON $cl.$clID = $cac.$cacChildID ORDER BY $cl.$clName ASC";
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($courseListIDValue)),
                 'CourseList',
-                array(self::TABLE_COURSELIST_AND_COURSELIST_LEVEL => self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
-                    self::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE => false)
+                array(self::TABLE_COURSELIST_TO_COURSELIST_LEVEL => self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
+                    self::TABLE_COURSELIST_TO_COURSELIST_OR_ABOVE => false)
             );
     }
     
@@ -1396,15 +1630,15 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return type
      */
     public function getParentCourseLists($courseListIDValue, 
-        $levelValue = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
+        $levelValue = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
         $orAboveValue = false) {
         $cl = self::TABLE_COURSELIST;
         $clID = self::TABLE_COURSELIST_ID;
         $clName = self::TABLE_COURSELIST_NAME;
 
-        $cac = self::TABLE_COURSELIST_AND_COURSELIST;
-        $cacParentID = self::TABLE_COURSELIST_AND_COURSELIST_PARENT_ID;
-        $cacChildID = self::TABLE_COURSELIST_AND_COURSELIST_CHILD_ID;
+        $cac = self::TABLE_COURSELIST_TO_COURSELIST;
+        $cacParentID = self::TABLE_COURSELIST_TO_COURSELIST_PARENT_ID;
+        $cacChildID = self::TABLE_COURSELIST_TO_COURSELIST_CHILD_ID;
         
         // Create a level condition based on the parameters
         $levelCondition = self::getCourseListLevelCondition($cac, $levelValue, $orAboveValue);
@@ -1424,11 +1658,11 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return type
      */
     public function getCourseListLevel($parentCourseListID, $childCourseListID) {
-        $cal = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL;
-        $calParentID = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_PARENT_ID;
-        $calChildID = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_CHILD_ID;
-        $calLevel = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_LEVEL;
-        $calOrAbove = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_OR_ABOVE;
+        $cal = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL;
+        $calParentID = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_PARENT_ID;
+        $calChildID = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_CHILD_ID;
+        $calLevel = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_LEVEL;
+        $calOrAbove = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_OR_ABOVE;
 
         $query = "SELECT $calLevel, $calOrAbove FROM $cal WHERE ($calParentID = ?) AND ($calChildID = ?)";        
         return $this->getQueryResult($query, array($parentCourseListID, $childCourseListID));
@@ -1460,13 +1694,13 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return type
      */
     public function getCPRsForCourseList($clIDValue, 
-        $levelValue = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
+        $levelValue = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
         $orAboveValue = false) {
         $cprResultArray = array();
         
         $cpr = self::TABLE_CPR;
         $cprID = self::TABLE_CPR_ID;
-        $cprName = self::TABLE_CPR_NAME;        
+        $cprNumber = self::TABLE_CPR_NUMBER;        
         
         $cac = self::TABLE_CPR_AND_COURSELIST;
         $cacCourseListID = self::TABLE_CPR_AND_COURSELIST_COURSELIST_ID;
@@ -1478,7 +1712,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
             self::getCourseListLevelArguments($levelValue, $orAboveValue));
         
         // Start by finding all CPRs that have this list as their direct child                
-        $query = "SELECT $cpr.* FROM ($cpr JOIN (SELECT * FROM $cac WHERE $cac.$cacCourseListID = ? $levelCondition) AS $cac ON $cpr.$cprID = $cac.$cacCPRID) ORDER BY $cpr.$cprName ASC";
+        $query = "SELECT $cpr.* FROM ($cpr JOIN (SELECT * FROM $cac WHERE $cac.$cacCourseListID = ? $levelCondition) AS $cac ON $cpr.$cprID = $cac.$cacCPRID) ORDER BY $cpr.$cprNumber ASC";
         $parentCPRArray = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, $queryArguments),
             'CoursePlanRequirement');
@@ -1698,7 +1932,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public function getTPRFromID($idValue) {
         return $this->createObjectFromDatabaseRow(
             $this->getRowFromID(self::TABLE_TPR, self::TABLE_TPR_ID, $idValue),
-            'TextProgramRequirement');
+            'TextPlanRequirement');
     }     
 
     /**
@@ -1708,15 +1942,39 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return      
      */
     public function getCourseListFromID($idValue, 
-        $levelValue = self::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
+        $levelValue = self::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
         $orAboveValue = false) {
         return $this->createObjectFromDatabaseRow(
             $this->getRowFromID(self::TABLE_COURSELIST, self::TABLE_COURSELIST_ID, $idValue),
             'CourseList',
-            array(self::TABLE_COURSELIST_AND_COURSELIST_LEVEL => $levelValue, 
-                self::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE => $orAboveValue)
+            array(self::TABLE_COURSELIST_TO_COURSELIST_LEVEL => $levelValue, 
+                self::TABLE_COURSELIST_TO_COURSELIST_OR_ABOVE => $orAboveValue)
             );
     }     
+    
+    /**
+     * Queries the database for the single CPRList with the given ID.
+     *
+     * @param $idValue   The CPRList's ID (string or numeric)
+     * @return      
+     */
+    public function getCPRListFromID($idValue) {
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_CPRLIST, self::TABLE_CPRLIST_ID, $idValue),
+            'CPRList');
+    }     
+
+    /**
+     * Queries the database for the single TPRList with the given ID.
+     *
+     * @param $idValue   The TPRList's ID (string or numeric)
+     * @return      
+     */
+    public function getTPRListFromID($idValue) {
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_TPRLIST, self::TABLE_TPRLIST_ID, $idValue),
+            'TPRList');
+    }         
     
     /**
      * 

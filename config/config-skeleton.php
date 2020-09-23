@@ -117,6 +117,7 @@ include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/CLLOAndPLLO.php');
 include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/Course.php');
 include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/CourseLevelLearningOutcome.php');
 include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/CoursePlanRequirement.php');
+include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/CPRList.php');
 include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/Degree.php');
 include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/DegreeLevelExpectation.php');
 include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/Department.php');
@@ -133,9 +134,8 @@ include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/RelationshipCourseLis
 include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/Revision.php');
 include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/SubjectCourseList.php');
 include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/TextPlanRequirement.php');
+include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/TPRList.php');
 include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/User.php');
-
-include_once(QSC_CMP_SRC_DATABASE_OBJECTS_DIRECTORY_PATH.'/CalendarCourse.php');
 
 include_once(QSC_CMP_SRC_MANAGERS_DIRECTORY_PATH.'/CourseCalendarDatabase.php');
 include_once(QSC_CMP_SRC_MANAGERS_DIRECTORY_PATH.'/CurriculumMappingDatabase.php');

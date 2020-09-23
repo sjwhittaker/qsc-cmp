@@ -47,11 +47,12 @@ class Plan extends CalendarComponent {
         $code = $argArray[CMD::TABLE_PLAN_CODE];
         $type = $argArray[CMD::TABLE_PLAN_TYPE];
         $internship = $argArray[CMD::TABLE_PLAN_INTERNSHIP];
-        $prior_to = $argArray[CMD::TABLE_PLAN_PRIOR_TO];
         $text = $argArray[CMD::TABLE_PLAN_TEXT];
+        $prior_to = $argArray[CMD::TABLE_PLAN_PRIOR_TO];
+        $number = $argArray[CMD::TABLE_PLAN_NUMBER];
         $notes = $argArray[CMD::TABLE_PLAN_NOTES];
 
-        return new Plan($id, $name, $code, $type, $internship, $prior_to, $text, $notes);
+        return new Plan($id, $name, $code, $type, $internship, $text, $prior_to, $number, $notes);
     }
         
     /**
@@ -99,10 +100,12 @@ class Plan extends CalendarComponent {
     protected $code = null;
     protected $type = null;
     protected $internship = null;
-    protected $prior_to = null;
     protected $text = null;
+    protected $prior_to = null;
+    protected $number = null;
     protected $notes = null;
-    protected $subPlanArray = array();
+    protected $cprListArray = array();
+    protected $tprListArray = array();
        
 
     /*************************************************************************
@@ -116,19 +119,21 @@ class Plan extends CalendarComponent {
      * @param type $argCode
      * @param type $argType
      * @param type $argInternship
-     * @param type $argPriorTo
      * @param type $argText
+     * @param type $argPriorTo
+     * @param type $argNumber
      * @param type $argNotes
      */
     public function __construct($argDBID, $argName, $argCode, $argType, 
-        $argInternship, $argPriorTo, $argText, $argNotes) {
+        $argInternship, $argText = null, $argPriorTo = null, $argNumber = null, $argNotes = null) {
         parent::__construct($argDBID, $argName);
         
         $this->code = $argCode;
         $this->type = $argType;
         $this->internship = $argInternship;
-        $this->prior_to = $argPriorTo;
         $this->text = $argText;
+        $this->prior_to = $argPriorTo;
+        $this->number = $argNumber;
         $this->notes = $argNotes;
     }
     
@@ -141,8 +146,9 @@ class Plan extends CalendarComponent {
      * @param type $dbCurriculum
      */
     public function initialize($dbCurriculum, $argArray = array()) {
-        // Get child plans (if any)
-        $this->subPlanArray = $dbCurriculum->getSubPlans($this->getDBID());        
+        // Get all direct CPRLists and TPRLists
+        $this->cprListArray = $dbCurriculum->getChildCPRListsForPlan($this->getDBID());
+        $this->tprListArray = $dbCurriculum->getChildTPRListsForPlan($this->getDBID());                
     }
     
 
@@ -172,15 +178,6 @@ class Plan extends CalendarComponent {
     public function hasInternship() {
         return $this->internship;
     }
-        
-    /**
-     * 
-     * @param type $noneOption
-     * @return type
-     */ 
-    public function getPriorTo($noneOption = null) {
-       return qsc_core_get_none_if_empty($this->prior_to, $noneOption);   
-    }    
     
     /** 
      * 
@@ -189,7 +186,25 @@ class Plan extends CalendarComponent {
      */
     public function getText($noneOption = null) {
        return qsc_core_get_none_if_empty($this->text, $noneOption);   
-    } 
+    }
+    
+    /**
+     * 
+     * @param type $noneOption
+     * @return type
+     */ 
+    public function getPriorTo($noneOption = null) {
+       return qsc_core_get_none_if_empty($this->prior_to, $noneOption);   
+    }    
+        
+    /** 
+     * The get method for the plan's number.
+     *
+     * @return  The string 'number'
+     */ 
+    public function getNumber($noneOption = null) {
+        return qsc_core_get_none_if_empty($this->number, $noneOption);
+    }    
 
     /** 
      * 
@@ -212,9 +227,17 @@ class Plan extends CalendarComponent {
      * 
      * @return type
      */
-    public function getSubPlanArray() {
-       return $this->subPlanArray; 
+    public function getCPRListArray() {
+       return $this->cprListArray; 
     }
+
+    /**
+     * 
+     * @return type
+     */
+    public function getTPRListArray() {
+       return $this->tprListArray; 
+    }     
     
 
     /*************************************************************************
@@ -222,10 +245,17 @@ class Plan extends CalendarComponent {
      *************************************************************************/
     /**
      * 
-     * @return type
+     * @return boolean
      */
     public function hasSubPlans() {
-        return (! empty($this->subPlanArray));
+        // Check for a CPRList with sub-plans
+        foreach ($this->cprListArray as $cprList) {
+            if ($cprList->hasSubPlans()) {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     /**
@@ -234,6 +264,21 @@ class Plan extends CalendarComponent {
      */
     public function isSubPlan() {
         return ($this->type == CMD::TABLE_PLAN_TYPE_SUB_PLAN);
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public function getSubPlanArray() {
+        // Check for a CPRList with sub-plans
+        foreach ($this->cprListArray as $cprList) {
+            if ($cprList->hasSubPlans()) {
+                return $cprList->getSubPlanArray();
+            }
+        }
+        
+        return array();
     }
     
     /**
@@ -304,6 +349,20 @@ class Plan extends CalendarComponent {
     
     /**
      * 
+     * @return array
+     */
+    public function getDescendantCPRs() {
+        $cprArray = array();
+        
+        foreach ($this->cprListArray as $cprList) {
+            $cprArray = array_merge($cprArray, $cprList->getAllCPRsRecursive());            
+        }
+        
+        return $cprArray;
+    }
+    
+    /**
+     * 
      * @param type $db_curriculum
      * @return type
      */
@@ -311,7 +370,7 @@ class Plan extends CalendarComponent {
         $requiredCourseArray = array();
         
         // Get the CPRs
-        $cprArray = $db_curriculum->getCPRsForPlan($this->getDBID());
+        $cprArray = $this->getDescendantCPRs();
         if (! $cprArray) {
             return array();
         }
@@ -330,6 +389,62 @@ class Plan extends CalendarComponent {
         );        
                                 
         return $requiredCourseArray;
+    }
+    
+    /**
+     * 
+     * @param type $cprlType
+     * @return type
+     */
+    public function getCPRListFromType($cprlType) {
+        return self::getPRListFromType($this->cprListArray, $cprlType);
+    }
+    
+    /**
+     * 
+     * @param type $tprlType
+     * @return type
+     */
+    public function getTPRListFromType($tprlType) {
+        return self::getPRListFromType($this->tprListArray, $tprlType);
+    }    
+    
+    /**
+     * 
+     * @param type $prlArray
+     * @param type $prlType
+     * @return type
+     */
+    protected static function getPRListFromType($prlArray, $prlType) {
+        foreach ($prlArray as $prList) {
+            if ($prList->getType() == $prlType) {
+                return $prList;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public function getTotalUnits($cprlType = null) {
+        if ($cprlType) {
+            $cprList = $this->getCPRListFromType($cprlType);
+            return $cprList ? $cprList->getTotalUnits() : 0;
+        }
+
+        return array_sum(
+            qsc_core_map_member_function($this->cprListArray, 'getTotalUnits'));
+    }
+
+    /**
+     * 
+     * @return type
+     */
+    public function getTotalUnitsToDisplay($cprlType = null) {
+        return number_format($this->getTotalUnits($cprlType), 1);
     }    
 
 }

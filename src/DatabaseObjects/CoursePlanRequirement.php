@@ -28,6 +28,8 @@ namespace DatabaseObjects;
 use Managers\SubsetManager;
 use Managers\CurriculumMappingDatabase as CMD;
 
+use \NumberFormatter;
+
 
 /**
  * The class CoursePlanRequirement represents a CPR as stored in the database.
@@ -46,16 +48,13 @@ class CoursePlanRequirement extends PlanRequirement {
      */
     public static function buildFromDBRow($argArray) {       
         $id = $argArray[CMD::TABLE_CPR_ID];
-        $name = $argArray[CMD::TABLE_CPR_NAME];
+        $number = $argArray[CMD::TABLE_CPR_NUMBER];
         $units = $argArray[CMD::TABLE_CPR_UNITS];
         $connector = $argArray[CMD::TABLE_CPR_CONNECTOR];
-        $type = $argArray[CMD::TABLE_CPR_TYPE];
         $text = $argArray[CMD::TABLE_CPR_TEXT];
         $notes = $argArray[CMD::TABLE_CPR_NOTES];
 
-        $cprClass = $argArray[CMD::TABLE_CPR_CLASS];
-        
-        return new CoursePlanRequirement($id, $name, $units, $connector, $type, $text, $notes);
+        return new CoursePlanRequirement($id, $number, $units, $connector, $text, $notes);
     }
     
     
@@ -64,6 +63,8 @@ class CoursePlanRequirement extends PlanRequirement {
      **************************************************************************/
     protected $units = null;
     protected $connector = null;
+    
+    protected $childCPRListArray = array();    
 
 
     /**************************************************************************
@@ -74,20 +75,33 @@ class CoursePlanRequirement extends PlanRequirement {
      * ID, which may be left as null/unset/empty.
      *
      * @param $argDBID         The requirement's database integer ID
-     * @param $argName         The requirement's string name
+     * @param $argNumber       The requirement's string number
      * @param $argUnits        The requirement's units
      * @param $argConnector    The requirement's connector
-     * @param $argType         The requirement's type
      * @param $argText         The requirement's text (default value of null)
      * @param $argNotes        The requirement's notes (default value of null)
      */
-    protected function __construct($argDBID, $argName, $argUnits, 
-        $argConnector, $argType = null, $argText = null, $argNotes = null) {
-        parent::__construct($argDBID, $argName, $argType, $argText, $argNotes);
+    protected function __construct($argDBID, $argNumber, $argUnits, 
+        $argConnector, $argText = null, $argNotes = null) {
+        parent::__construct($argDBID, $argNumber, $argText, $argNotes);
 
         $this->units = $argUnits;
         $this->connector = $argConnector;
     }
+    
+    
+    /*************************************************************************
+     * Initialize
+     *************************************************************************/
+    /**
+     * Initializes the member variables that can't be set by a single DB row.
+     * 
+     * @param type $dbCurriculum
+     */
+    public function initialize($dbCurriculum, $argArray = array()) {
+        // Fetch and initialize the child CPR lists
+        $this->childPRListArray = $dbCurriculum->getChildCPRListsForCPR($this->dbID);        
+    }    
 
 
     /**************************************************************************
@@ -120,7 +134,15 @@ class CoursePlanRequirement extends PlanRequirement {
      */
     public function getText($noneOption = null) {
        return qsc_core_get_none_if_empty($this->text, $noneOption);   
-    }     
+    }
+
+    /**
+     * 
+     * @return type
+     */
+    public function getChildCPRListArray() {
+        return $this->childPRListArray;
+    }    
 
 
     /**************************************************************************
@@ -162,6 +184,124 @@ class CoursePlanRequirement extends PlanRequirement {
         }
                         
         return array();
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public function hasSubLists() {
+        return (! empty($this->childPRListArray));
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public function getUnitsToDisplay() {
+        return number_format($this->units, 1);
+    }
+    
+    /**
+     * 
+     * @return array
+     */
+    public function getSubListNames($parentCPRListNumber) {
+        $subListNameArray = array();
+        
+        $prefix = "$parentCPRListNumber.";
+        $prefix .= $this->number.'.';
+        foreach ($this->childPRListArray as $childCPRList) {
+            $subListName = $prefix.$childCPRList->getNumber().'.';
+            
+            $subListNameArray[] = $subListName;
+        }
+                       
+        return $subListNameArray;
+    }
+    
+    /**
+     * 
+     * @param type $parentCPRListNumber
+     * @return type
+     */
+    public function getSubListNamesHTML($parentCPRListNumber) {
+        $listNameArray = $this->getSubListNames($parentCPRListNumber);
+        $listNameArray = array_map(function($a) {
+            return '<span class="sub-list-name">' . $a . '</span>';
+        }, $listNameArray);
+        
+        return join($listNameArray, '; ');
+    }
+    
+    /**
+     * 
+     */
+    protected function getSubListsRequired($getMin = true) {
+        if (! $this->hasSubLists()) {
+            return false;
+        }
+        
+        $numRequired = 0;
+        $cprUnits = $this->units;
+        $numSubLists = count($this->childPRListArray);
+        
+        // Get all of the units from the sub-lists and sort
+        $totalUnitsArray = qsc_core_map_member_function(
+            $this->childPRListArray, 'getTotalUnits');
+        if ($getMin) {
+            rsort($totalUnitsArray);
+        }
+        else {
+            sort($totalUnitsArray);            
+        }
+                       
+        // Retrieve the maximum 
+        while (($numRequired < $numSubLists) && ($cprUnits > 0)) {
+            $cprUnits -= $totalUnitsArray[$numRequired];
+            $numRequired++;
+        }
+
+        return ($cprUnits > 0) ? false : $numRequired;
+    }    
+    
+    /**
+     * 
+     * @return type
+     */
+    public function getMinSubListsRequired() {
+        return $this->getSubListsRequired(true);
+    }
+
+    /**
+     * 
+     * @return type
+     */
+    public function getMaxSubListsRequired() {
+        return $this->getSubListsRequired(false);
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    public function getSubListsRequiredHTML($capitalizeFirst = false) {
+        $requiredHTML = '';
+        
+        $minRequired = $this->getMinSubListsRequired();
+        $maxRequired = $this->getMaxSubListsRequired();
+        
+        $numberFormatter = new NumberFormatter(
+            locale_get_display_language(null), NumberFormatter::SPELLOUT);
+        $requiredHTML = ($minRequired == $maxRequired) ?
+            $numberFormatter->format($minRequired) :
+            $numberFormatter->format($minRequired).' - '. $numberFormatter->format($maxRequired);
+        
+        if ($capitalizeFirst) {
+            $requiredHTML = ucfirst($requiredHTML);
+        }
+
+        return '<span class="sub-list-num-required">'.$requiredHTML.'</span>';
     }
     
 }

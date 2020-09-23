@@ -52,11 +52,11 @@ class OptionCourseList extends CourseList {
      * @param type $dbCurriculum
      */
     public function initialize($dbCurriculum, $argArray = array(
-            CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL => CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
-            CMD::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE => false)) {
+            CMD::TABLE_COURSELIST_TO_COURSELIST_LEVEL => CMD::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
+            CMD::TABLE_COURSELIST_TO_COURSELIST_OR_ABOVE => false)) {
         // Set the level and 'or above' option
-        $this->level = $argArray[CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL];
-        $this->orAbove = $argArray[CMD::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE];
+        $this->level = $argArray[CMD::TABLE_COURSELIST_TO_COURSELIST_LEVEL];
+        $this->orAbove = $argArray[CMD::TABLE_COURSELIST_TO_COURSELIST_OR_ABOVE];
         
         // Get the courses that are directly associated with this list
         $this->childCourseArray = $dbCurriculum->getCoursesInCourseList(

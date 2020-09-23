@@ -54,11 +54,13 @@ else:
         $planName = ($plan) ? ' for '.$plan->getName() : '';
         $planAnchor = ($plan) ? ' for '.$plan->getAnchorToView() : '';
         
-        qsc_cmp_start_html(array(QSC_CMP_START_HTML_TITLE => "View ".$tpr->getType()." Requirement ".$tpr->getName().$planName));
+        $tpr_type = $db_curriculum->getTypeForTPR($tpr_id);
+        
+        qsc_cmp_start_html(array(QSC_CMP_START_HTML_TITLE => "View $tpr_type Requirement ".$tpr->getNumber().$planName));
     
         ?>
 
-<h1><?= $tpr->getType(); ?> Requirement <?= $tpr->getName();?><?= $planAnchor; ?></h1>
+<h1><?= $tpr_type ?> Requirement <?= $tpr->getNumber();?><?= $planAnchor; ?></h1>
 
         <?php qsc_cmp_display_property_columns(array(
             "Text" => $tpr->getText(QSC_CMP_TEXT_NONE_SPECIFIED),

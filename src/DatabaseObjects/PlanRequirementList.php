@@ -27,14 +27,11 @@ namespace DatabaseObjects;
 
 use Managers\CurriculumMappingDatabase as CMD;
 
-/** 
- * The abstract class PlanRequirement contains elements and functionality 
- * common to all plan requirements.
- */
-abstract class PlanRequirement extends DatabaseObject {    
-    /**************************************************************************
+
+abstract class PlanRequirementList extends DatabaseObject {
+    /*************************************************************************
      * Static Functions
-     **************************************************************************/
+     ************************************************************************/        
     /**
      * 
      * @return type
@@ -43,86 +40,102 @@ abstract class PlanRequirement extends DatabaseObject {
         return function($a, $b) { 
                 return strcmp($a->getNumber(), $b->getNumber());
             };        
-    } 
+    }     
+            
 
-    
     /**************************************************************************
      * Member Variables
      **************************************************************************/
     protected $number = null;
     protected $type = null;
-    protected $text = null;
-    protected $notes = null;    
+    protected $notes = null;
+    
+    // All child PlanRequirements
+    protected $childPRArray = array();
+    
+    // All child PlanRequirementLists
+    protected $childPRListArray = array();           
     
 
     /**************************************************************************
-     * Abstract Methods
-     **************************************************************************/
-    abstract protected function getLinkToView();     
-     
- 
-    /**************************************************************************
      * Constructor
      **************************************************************************/
-    /** 
+    /**
      * This constructor sets all of the member variables except for the parent
-     * ID, which may be left as null/unset/empty.
+     * ID.
      *
-     * @param $argDBID         The requirement's database integer ID
-     * @param $argNumber       The requirement's string 'number'
-     * @param $argText         The requirement's text description
-     * @param $argNotes        The outcome's notes (default value of null)
-     */ 
-    protected function __construct($argDBID, $argNumber, $argText, $argNotes = null) {
+     * @param type $argDBID
+     * @param type $argNumber
+     * @param type $argType
+     * @param type $argNotes
+     */
+    protected function __construct($argDBID, $argNumber, $argType = null, 
+            $argNotes = null) {
         parent::__construct($argDBID);
-
-        $this->number = $argNumber;
-        $this->text = $argText;
-        $this->notes = $argNotes;        
+        
+        $this->number = empty($argNumber) ? '' : $argNumber;
+        $this->type = $argType;
+        $this->notes = $argNotes;
     }
+      
 
-     
     /**************************************************************************
      * Get and Set Methods
      **************************************************************************/
     /** 
-     * The get method for the requirement's number.
+     * The get method for the list's number.
      *
-     * @return  The string 'number'
+     * @return  The string name
      */ 
     public function getNumber() {
-        return $this->number;
-    }
-
-    /** 
-     * The get method for the requirement's text.
-     *
-     * @return  The string text
-     */ 
-    public function getText() {
-        return $this->text;   
+        return $this->number;           
     }
     
     /** 
-     * The get method for the requirement's notes.
+     * The get method for the list's type.
      *
+     * @return  The string type
+     */ 
+    public function getType() {
+        return $this->type;           
+    }
+                
+    /** 
+     * The get method for the list's notes.
+     *
+     * @param type $noneOption
      * @return  The string notes
      */ 
     public function getNotes($noneOption = null) {
-       return qsc_core_get_none_if_empty($this->notes, $noneOption);   
-    }     
-     
-          
+        return qsc_core_get_none_if_empty($this->notes, $noneOption);   
+    }
+    
+    
     /**************************************************************************
      * Member Functions
      **************************************************************************/
     /**
      * 
-     * @param type $withText
      * @return type
      */
-    public function getAnchorToView($withText = false) {
-        return '<a href="'.$this->getLinkToView().'">'.$this->getNumber().'</a>'.($withText ? ': '.$this->text : '');
+    public function getTableHeadingID() {
+        $dbid = $this->getDBID();
+        $thtype = preg_replace('/\s+/', '-', strtolower($this->type));
+        
+        return "$thtype-$dbid";
     }
     
+    /**
+     * 
+     */
+    protected function getAllPlanRequirementsRecursive() {
+        $allPRArray = $this->childPRArray;
+        
+        foreach ($this->childPRListArray as $childPRList) {
+            $allPRArray = array_merge($allPRArray, $childPRList->getAllPlanRequirementsRecursive());
+        }        
+        
+        return $allPRArray;        
+    }
+            
 }

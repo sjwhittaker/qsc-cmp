@@ -60,11 +60,11 @@ class SubjectCourseList extends CourseList {
      * @param type $dbCurriculum
      */
     public function initialize($dbCurriculum, $argArray = array(
-            CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL => CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL_NONE, 
-            CMD::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE => false)) {        
+            CMD::TABLE_COURSELIST_TO_COURSELIST_LEVEL => CMD::TABLE_COURSELIST_TO_COURSELIST_LEVEL_NONE, 
+            CMD::TABLE_COURSELIST_TO_COURSELIST_OR_ABOVE => false)) {        
         // Set the level and 'or above' option
-        $this->level = $argArray[CMD::TABLE_COURSELIST_AND_COURSELIST_LEVEL];
-        $this->orAbove = $argArray[CMD::TABLE_COURSELIST_AND_COURSELIST_OR_ABOVE];
+        $this->level = $argArray[CMD::TABLE_COURSELIST_TO_COURSELIST_LEVEL];
+        $this->orAbove = $argArray[CMD::TABLE_COURSELIST_TO_COURSELIST_OR_ABOVE];
         
         // Get the subject for this course list
         $this->subject = $dbCurriculum->getCourseListSubject($this->dbID);

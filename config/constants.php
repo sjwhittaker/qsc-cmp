@@ -337,22 +337,8 @@ define("QSC_CORE_QUERY_STRING_NAME_OR_ABOVE", "or_above");
 
 
 /******************************************************************************/
-/* Misc */
+/* CourseList */
 /******************************************************************************/
-qsc_core_define_constant("QSC_CMP_LOCAL_DEVELOPMENT", false);
-qsc_core_define_constant("QSC_CMP_LOCAL_DEVELOPMENT_USER_ID", '');
-qsc_core_define_constant("QSC_CMP_LOCAL_DEVELOPMENT_USER_FIRST_NAME", '');
-qsc_core_define_constant("QSC_CMP_LOCAL_DEVELOPMENT_USER_LAST_NAME", '');
-
-qsc_core_define_constant("QSC_CMP_TEXT_NONE", "<em>None</em>");
-qsc_core_define_constant("QSC_CMP_TEXT_NONE_SPECIFIED", "<em>None specified</em>");
-
-qsc_core_define_constant("QSC_CMP_HTML_REVISION_NONE", "<span class=\"revision-none\">None</span>");
-
-qsc_core_define_constant("QSC_CMP_COURSE_CODE_DELIMETER", " ");
-qsc_core_define_constant("QSC_CMP_COURSE_CROSS_REFERENCE_DELIMETER", "/");
-qsc_core_define_constant("QSC_CMP_COURSE_UNITS_DEFAULT", 3.0);
-
 qsc_core_define_constant("QSC_CMP_COURSELIST_LEVEL_PREFIX", " at the ");
 qsc_core_define_constant("QSC_CMP_COURSELIST_LEVEL_POSTFIX", " level");
 qsc_core_define_constant("QSC_CMP_COURSELIST_OR_ABOVE_POSTFIX", " or above");
@@ -367,13 +353,52 @@ qsc_core_define_constant("QSC_CMP_COURSELIST_SUBSETS_RECURSIVE_LIMIT", 1000);
 qsc_core_define_constant("QSC_CMP_COURSELIST_SUBSETS_DISPLAY_LIMIT", 50);
 qsc_core_define_constant("QSC_CMP_COURSELIST_SUBSETS_MAXIMUM_ADDITIONAL_UNITS", 3.0);
 
+
+/******************************************************************************/
+/* CPRList and TPRList */
+/******************************************************************************/
+qsc_core_define_constant("QSC_CMP_CPRLIST_TYPE_CORE", "Core");
+qsc_core_define_constant("QSC_CMP_CPRLIST_TYPE_OPTION", "Option");
+qsc_core_define_constant("QSC_CMP_CPRLIST_TYPE_SUPPORTING", "Supporting");
+qsc_core_define_constant("QSC_CMP_CPRLIST_TYPE_SUB_PLANS", "Sub-Plans");
+
+qsc_core_define_constant("QSC_CMP_TPRLIST_TYPE_ADDITIONAL_REQUIREMENTS", "Additional Requirements");
+qsc_core_define_constant("QSC_CMP_TPRLIST_TYPE_SUBSTITUTIONS", "Substitutions");
+qsc_core_define_constant("QSC_CMP_TPRLIST_TYPE_NOTES", "Notes");
+
+
+/******************************************************************************/
+/* CPR Table */
+/******************************************************************************/
+qsc_core_define_constant("QSC_CMP_CPR_TH_ID_NUMBER", "cpr-th-number");
+qsc_core_define_constant("QSC_CMP_CPR_TH_ID_UNITS", "cpr-th-units");
+qsc_core_define_constant("QSC_CMP_CPR_TH_ID_CONNECTOR", "cpr-th-connector");
+qsc_core_define_constant("QSC_CMP_CPR_TH_ID_COURSES", "cpr-th-courses");
+
+
+/******************************************************************************/
+/* Local Development */
+/******************************************************************************/
+qsc_core_define_constant("QSC_CMP_LOCAL_DEVELOPMENT", false);
+qsc_core_define_constant("QSC_CMP_LOCAL_DEVELOPMENT_USER_ID", '');
+qsc_core_define_constant("QSC_CMP_LOCAL_DEVELOPMENT_USER_FIRST_NAME", '');
+qsc_core_define_constant("QSC_CMP_LOCAL_DEVELOPMENT_USER_LAST_NAME", '');
+
+
+/******************************************************************************/
+/* Misc */
+/******************************************************************************/
+qsc_core_define_constant("QSC_CMP_TEXT_NONE", "<em>None</em>");
+qsc_core_define_constant("QSC_CMP_TEXT_NONE_SPECIFIED", "<em>None specified</em>");
+
+qsc_core_define_constant("QSC_CMP_HTML_REVISION_NONE", "<span class=\"revision-none\">None</span>");
+
+qsc_core_define_constant("QSC_CMP_COURSE_CODE_DELIMETER", " ");
+qsc_core_define_constant("QSC_CMP_COURSE_CROSS_REFERENCE_DELIMETER", "/");
+qsc_core_define_constant("QSC_CMP_COURSE_UNITS_DEFAULT", 3.0);
+
 qsc_core_define_constant("QSC_CMP_PROGRAM_AND_PLAN_NAME_DELIMETER", "-");
 qsc_core_define_constant("QSC_CMP_PROGRAM_AND_PLAN_CODE_DELIMETER", "-");
 
 qsc_core_define_constant("QSC_CMP_PLLO_PREFIX_DELIMETER", "-");
-
-qsc_core_define_constant("QSC_CMP_PLAN_REQUIREMENT_START_NUMBER", 1);
-qsc_core_define_constant("QSC_CMP_SUB_PLAN_START_LETTER", 'A');
-qsc_core_define_constant("QSC_CMP_SUB_PLAN_REQUIREMENT_START_NUMBER", 1);
-
 

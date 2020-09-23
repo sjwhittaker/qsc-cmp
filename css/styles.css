@@ -47,6 +47,10 @@ body,
     color: #242424;
 }
 
+.legacy-course {
+    color: #555;
+}
+
 header,
 header a,
 #header-branding a,
@@ -124,7 +128,7 @@ body {
     font-family: var(--font-family-serif);
 }
 
-h1, h2, h3, h4, h5, h6, th, label, 
+h1, h2, h3, h4, h5, h6, th, thead td, label, 
 input[type=button], input[type=submit], 
 .property-columns .property, 
 .tooltip-container .tooltip-popup .tooltip-popup-title,
@@ -467,6 +471,15 @@ footer, #credits {
     color: var(--light);    
 }
 
+.plan-requirements td.indent {
+    border: 0 solid transparent;
+}
+
+
+.plan-requirements tbody th {
+    font-style: italic;
+}
+
 .sub-plan-requirements-header {
     padding: 0.75em 1em;
     margin-bottom: 16px;
@@ -498,6 +511,15 @@ footer, #credits {
 
 #content .sub-plan-requirements .plan-title a {
     color: var(--light);
+}
+
+.sub-list-name, 
+.sub-list-num-required {
+    font-weight: bold;
+}
+
+.sub-list-name {
+    font-style: italic;
 }
 
 
@@ -551,3 +573,6 @@ table ul {
     padding-top: 8px;
 }
 
+.legacy-course {
+    font-style: italic;    
+}
