@@ -74,7 +74,9 @@ qsc_core_define_constant("QSC_CMP_COURSE_VIEW_PAGE_LINK", QSC_CMP_COURSE_DIRECTO
 qsc_core_define_constant("QSC_CMP_COURSELIST_VIEW_PAGE_LINK", QSC_CMP_COURSELIST_DIRECTORY_LINK."/view.php");
 qsc_core_define_constant("QSC_CMP_CPR_VIEW_PAGE_LINK", QSC_CMP_CPR_DIRECTORY_LINK."/view.php");
 qsc_core_define_constant("QSC_CMP_DEGREE_VIEW_PAGE_LINK", QSC_CMP_DEGREE_DIRECTORY_LINK."/view.php");
+
 qsc_core_define_constant("QSC_CMP_DEPARTMENT_VIEW_PAGE_LINK", QSC_CMP_DEPARTMENT_DIRECTORY_LINK."/view.php");
+qsc_core_define_constant("QSC_CMP_DEPARTMENT_VIEW_PLLOS_LINK", QSC_CMP_DEPARTMENT_DIRECTORY_LINK."/pllos.php");
 
 qsc_core_define_constant("QSC_CMP_DLE_ADD_PAGE_LINK", QSC_CMP_DLE_DIRECTORY_LINK."/add.php");
 qsc_core_define_constant("QSC_CMP_DLE_VIEW_PAGE_LINK", QSC_CMP_DLE_DIRECTORY_LINK."/view.php");
@@ -86,7 +88,10 @@ qsc_core_define_constant("QSC_CMP_ILO_ADD_PAGE_LINK", QSC_CMP_ILO_DIRECTORY_LINK
 qsc_core_define_constant("QSC_CMP_ILO_VIEW_PAGE_LINK", QSC_CMP_ILO_DIRECTORY_LINK."/view.php");
 qsc_core_define_constant("QSC_CMP_ILO_EDIT_PAGE_LINK", QSC_CMP_ILO_DIRECTORY_LINK."/edit.php");
 
+qsc_core_define_constant("QSC_CMP_LEGACY_COURSE_VIEW_PAGE_LINK", QSC_CMP_LEGACY_COURSE_DIRECTORY_LINK."/view.php");
+
 qsc_core_define_constant("QSC_CMP_PLAN_VIEW_PAGE_LINK", QSC_CMP_PLAN_DIRECTORY_LINK."/view.php");
+qsc_core_define_constant("QSC_CMP_PLAN_VIEW_PLLOS_LINK", QSC_CMP_PLAN_DIRECTORY_LINK."/pllos.php");
 
 qsc_core_define_constant("QSC_CMP_PLLO_ADD_PAGE_LINK", QSC_CMP_PLLO_DIRECTORY_LINK."/add.php");
 qsc_core_define_constant("QSC_CMP_PLLO_VIEW_PAGE_LINK", QSC_CMP_PLLO_DIRECTORY_LINK."/view.php");

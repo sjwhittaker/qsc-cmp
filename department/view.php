@@ -66,6 +66,8 @@ else:
             QSC_CORE_QUERY_STRING_NAME_DEPARTMENT_ID, $department_id);        
         $course_matrix_report_link = qsc_cmp_get_link_to_course_matrix(
             QSC_CORE_QUERY_STRING_NAME_DEPARTMENT_ID, $department_id);         
+        $department_pllos_report_link = qsc_core_create_link_with_id(
+            QSC_CMP_DEPARTMENT_VIEW_PLLOS_LINK, $department_id);
         ?>
 
 <h1><?= $department->getName();?></h1>
@@ -76,6 +78,9 @@ else:
     </div>
     <div class="col-auto">
         <?php qsc_cmp_display_link_button($course_matrix_report_link, "View Course Matrix"); ?>
+    </div>
+    <div class="col-auto">
+        <?php qsc_cmp_display_link_button($department_pllos_report_link, "View Departmental PLLOs"); ?>
     </div>
 </div>
 

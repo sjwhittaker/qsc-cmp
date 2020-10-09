@@ -128,7 +128,7 @@ else:
 
         <?php if (! empty($child_pllo_array)) : ?>    
 <h2>Child PLLOs</h2>
-        <?php qsc_cmp_display_pllo_table($child_pllo_array, $db_curriculum, false); ?>
+        <?php qsc_cmp_display_pllo_table($child_pllo_array, $db_curriculum); ?>
         <?php endif; ?>
 
 <h2>Course Level Learning Outcomes</h2>

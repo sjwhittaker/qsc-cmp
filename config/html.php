@@ -597,8 +597,8 @@ function qsc_cmp_display_plan_table($plan_array, $db_curriculum = null, $departm
                 ?>
             <tr>
                 <?php if ($department_id) : ?><td><?= $role; ?></td><?php endif; ?>
-                <td><a href="<?= $plan->getLinkToView() ?>"><?= $plan->getName() ?></a></td>
-                <td><?= $plan->isSubPlan() ? $plan->getCode() : $plan->getFullCode(); ?></td>
+                <td><a href="<?= $plan->getLinkToView() ?>"><?= $plan->getDescriptiveName() ?></a></td>
+                <td><?= $plan->getCode() ?></td>
                 <td><?php if ($plan->hasSubPlans()) : 
                         $sub_plan_array = $plan->getSubPlanArray(); ?>
                     <ul>
@@ -649,25 +649,48 @@ function qsc_cmp_display_plan_table($plan_array, $db_curriculum = null, $departm
  * @param type $pllo_array
  * @param type $db_curriculum
  */
-function qsc_cmp_display_pllo_table($pllo_array, $db_curriculum) {
+function qsc_cmp_display_pllo_table($pllo_array, $db_curriculum, $display_children = true) {
     if (empty($pllo_array)) {
         return;
     }
-?>
+    
+    $max_height_array = array();
+    foreach ($pllo_array as $pllo) {
+        $max_height_array[] = $db_curriculum->getPLLOHeight($pllo->getDBID());
+    }
+    $max_height = max($max_height_array);     
+?>        
     <table>
         <thead>
             <tr>
-                <th>Plan(s)</th>
-                <th>Number</th>
+                <th colspan="<?= $max_height ?>">Number</th>
                 <th>Text</th>
+                <th>Plan(s)</th>
             </tr>
         </thead>
         <tbody>
             <?php
-            foreach ($pllo_array as $pllo) : 
-                $plan_array = $db_curriculum->getPlansFromPLLO($pllo->getDBID());
-                $plan_anchor_array = qsc_core_map_member_function($plan_array, 'getAnchorToView'); ?>                        
+            foreach ($pllo_array as $pllo) {
+                $indent = $db_curriculum->getPLLODepth($pllo->getDBID()) - 1;
+                qsc_cmp_display_pllo_row($pllo, $db_curriculum, $max_height, $display_children, $indent);
+            }
+            ?>
+        </tbody>
+    </table>        
+<?php
+}
+
+function qsc_cmp_display_pllo_row($pllo, $db_curriculum, $colspan, $display_children = true, $indent = 0) { 
+    $child_pllo_array = $db_curriculum->getChildPLLOs($pllo->getDBID());
+        
+    $plan_array = $db_curriculum->getPlansFromPLLO($pllo->getDBID());
+    $plan_anchor_array = qsc_core_map_member_function($plan_array, 'getAnchorToView'); ?>                            
             <tr>
+                <?php if ($indent) : ?>
+                <td class="indent" colspan="<?= $indent ?>">
+                <?php endif; ?>
+                <td colspan="<?= $colspan - $indent ?>"><?= $pllo->getAnchorToView(); ?></td>
+                <td><?= $pllo->getText(); ?></td>
                 <td>
                 <?php if (! empty($plan_anchor_array)) : ?>
                     <ul>
@@ -677,13 +700,14 @@ function qsc_cmp_display_pllo_table($pllo_array, $db_curriculum) {
                     </ul>
                 <?php endif; ?>
                 </td>
-                <td><?= $pllo->getAnchorToView(); ?></td>
-                <td><?= $pllo->getText(); ?></td>
             </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>        
 <?php
+    // Now display the rows for all child PLLOs
+    if ($display_children) {
+        foreach ($child_pllo_array as $child_pllo) {
+            qsc_cmp_display_pllo_row($child_pllo, $db_curriculum, $colspan, $display_children, $indent + 1);
+        }
+    }
 }
 
 /**
@@ -869,11 +893,11 @@ function qsc_cmp_display_cllo_table($cllo_array, $db_curriculum = null, $db_cale
  * @param type $display_if_none
  * @return boolean
  */
-function qsc_cmp_display_cpr_table($cprlist, $db_curriculum, $display_if_none = true) {
+function qsc_cmp_display_cpr_table($cpr_list, $db_curriculum, $display_if_none = true) {
     // Get the CPRs for this list and check whether an empty set 
     // should be displayed
-    $child_cpr_array = $cprlist->getChildCPRArray();
-    $child_cprlist_array = $cprlist->getChildCPRListArray();
+    $child_cpr_array = $cpr_list->getChildCPRArray();
+    $child_cprlist_array = $cpr_list->getChildCPRListArray();
     
     // Does this CPRList have no children?
     if (empty($child_cpr_array) && empty($child_cprlist_array) && (! $display_if_none)) {
@@ -881,19 +905,18 @@ function qsc_cmp_display_cpr_table($cprlist, $db_curriculum, $display_if_none = 
     }
         
     // Check whether this CPRList has a CPR with sub-lists
-    $has_cpr_with_sub_lists = $cprlist->hasCPRWithSubLists();
+    $has_cpr_with_sub_lists = $cpr_list->hasCPRWithSubLists();
     
     $number_of_total_columns = $has_cpr_with_sub_lists ? 8 : 5;
-    $number_of_indent_columns = $has_cpr_with_sub_lists ? 3 : 0;    
     $sub_list_colspan = $has_cpr_with_sub_lists ? ' colspan="4"' : '';    
     
-    $cprlist_units = $cprlist->getTotalUnitsToDisplay();    
+    $cpr_list_units = $cpr_list->getTotalUnitsToDisplay();    
     ?>
 <table class="plan-requirements">
     <thead>
         <tr>
-            <td><?= $cprlist->getNumber(); ?>. <?= $cprlist->getType(); ?></td>
-            <td>(<?= $cprlist_units ?> units)</td>
+            <td><?= $cpr_list->getNumber(); ?>. <?= $cpr_list->getType(); ?></td>
+            <td>(<?= $cpr_list_units ?> units)</td>
             <td colspan="<?= $number_of_total_columns - 2 ?>"></td>
         </tr>
         <tr class="sr-only">
@@ -909,51 +932,80 @@ function qsc_cmp_display_cpr_table($cprlist, $db_curriculum, $display_if_none = 
         <tr>
             <td colspan="<?= $number_of_total_columns ?>"><?= QSC_CMP_TEXT_NONE_SPECIFIED; ?></td>
         </tr>
-    <?php else :
-        // Display any child CPRs first        
-        foreach ($child_cpr_array as $child_cpr) {
-            qsc_cmp_display_cpr_table_row($cprlist, $child_cpr, $db_curriculum, '');
-        }
-        
-        // Now look for child CPRLists as subheadings
-        foreach ($child_cprlist_array as $child_cpr_list) :
-            $grandchild_cpr_array = $child_cpr_list->getChildCPRArray();
-            $child_cprlist_th_id = $child_cpr_list->getTableHeadingID();
-            ?>
-        <tr>
-            <th id="<?= $child_cprlist_th_id ?>" colspan="<?= $number_of_total_columns - $number_of_indent_columns ?>"><?= $child_cpr_list->getType() ?></th>
-        </tr>
-            <?php if (empty($grandchild_cpr_array)) : ?>
-        <tr>
-            <td colspan="<?= $number_of_total_columns - $number_of_indent_columns ?>"><?= QSC_CMP_TEXT_NONE_SPECIFIED; ?></th>
-        </tr>        
-            <?php else:
-                foreach ($grandchild_cpr_array as $grandchild_cpr) {
-                    qsc_cmp_display_cpr_table_row($child_cpr_list, $grandchild_cpr, $db_curriculum, $child_cprlist_th_id);
-                }
-            endif;
-        endforeach;
+    <?php else :       
+        qsc_cmp_display_cpr_list_table_section($cpr_list, $db_curriculum, $has_cpr_with_sub_lists, false); 
     endif; ?>        
     </tbody>
 </table>
 <?php
-    return true;
 }
 
-function qsc_cmp_display_cpr_table_row($cpr_list, $cpr, $db_curriculum, $cprlist_th = '', $indented = false) {
+/**
+ * 
+ * @param type $cpr_list
+ * @param type $db_curriculum
+ * @param type $display_if_none
+ * @return boolean
+ */
+function qsc_cmp_display_cpr_list_table_section($cpr_list, $db_curriculum, $in_table_with_sublists, $indented, $cpr_list_th_id = '') {
+    // Get the CPRs for this list and check whether an empty set 
+    // should be displayed
+    $child_cpr_array = $cpr_list->getChildCPRArray();
+    $child_cprlist_array = $cpr_list->getChildCPRListArray();
+    
+    $number_of_total_columns = $in_table_with_sublists ? 8 : 5;
+    $number_of_indent_columns = $in_table_with_sublists ? 3 : 0;    
+
+    if (empty($child_cpr_array) && empty($child_cprlist_array)) : ?>
+        <tr>
+            <?php if ($indented) : ?>
+            <td class="indent" colspan="<?= $number_of_indent_columns ?>"></td>            
+            <?php endif; ?>            
+            <td colspan="<?= $number_of_total_columns ?>"><?= QSC_CMP_TEXT_NONE_SPECIFIED; ?></td>
+        </tr>
+    <?php else :
+        // Display any child CPRs first        
+        foreach ($child_cpr_array as $child_cpr) {
+            qsc_cmp_display_cpr_table_row($cpr_list, $child_cpr, $db_curriculum, $in_table_with_sublists, $indented, $cpr_list_th_id);
+        }
+        
+        // Now look for child CPRLists as subheadings
+        foreach ($child_cprlist_array as $child_cpr_list) :
+            $child_cprlist_th_id = $child_cpr_list->getTableHeadingID(); ?>
+        <tr>
+            <?php if ($indented) : ?>
+            <td class="indent" colspan="<?= $number_of_indent_columns ?>"></td>            
+            <?php endif; ?>            
+            <th id="<?= $child_cprlist_th_id ?>" colspan="<?= $number_of_total_columns - $number_of_indent_columns ?>"><?= $child_cpr_list->getType() ?></th>
+        </tr>
+            <?php qsc_cmp_display_cpr_list_table_section($child_cpr_list, $db_curriculum, $in_table_with_sublists, $indented, $child_cprlist_th_id); 
+        endforeach; 
+    endif;    
+}
+
+/**
+ * 
+ * @param type $cpr_list
+ * @param type $cpr
+ * @param type $db_curriculum
+ * @param type $in_table_with_sublists
+ * @param type $cpr_list_th
+ * @param type $indented
+ */
+function qsc_cmp_display_cpr_table_row($cpr_list, $cpr, $db_curriculum, $in_table_with_sublists, $indented, $cpr_list_th_id = '') {
     $course_list = $db_curriculum->getCourseListForCPR($cpr->getDBID());
     
     $cpr_has_sub_lists = $cpr->hasSubLists();
-    $table_has_sub_lists = $cpr_list->hasCPRWithSubLists();
+    $cpr_list_has_sublists = $cpr_list->hasChildCPRLists();
     
-    $number_of_total_columns = $table_has_sub_lists ? 8 : 5;
+    $number_of_total_columns = $in_table_with_sublists ? 8 : 5;
     $number_of_indent_columns = ($indented || $cpr_has_sub_lists) ? 3 : 0;
     ?>
         <tr>
             <?php if ($indented) : ?>
             <td class="indent" colspan="<?= $number_of_indent_columns ?>"></td>            
             <?php endif; ?>            
-            <td headers="<?= QSC_CMP_CPR_TH_ID_NUMBER ?><?php echo ($cprlist_th) ? " $cprlist_th" : '' ?>"><?= $cpr->getAnchorToView(); ?>.</td>
+            <td headers="<?= QSC_CMP_CPR_TH_ID_NUMBER ?><?php echo ($cpr_list_th_id) ? " $cpr_list_th_id" : '' ?>"><?= $cpr->getAnchorToView(); ?>.</td>
             <td headers="<?= QSC_CMP_CPR_TH_ID_UNITS ?>"><?= $cpr->getUnitsToDisplay(); ?> units</td>
             <td headers="<?= QSC_CMP_CPR_TH_ID_CONNECTOR ?>"><?= $cpr->getConnector(); ?></td>
         <?php if ($cpr_has_sub_lists) : 
@@ -966,26 +1018,23 @@ function qsc_cmp_display_cpr_table_row($cpr_list, $cpr, $db_curriculum, $cprlist
         ?>
             <td colspan="<?= $number_of_total_columns - 3 ?>"><?= $lists_required ?> of <?= $cpr_list->getType() ?> Lists <?= $list_names ?></td>
         </tr>
-            <?php foreach ($child_cpr_list_array as $child_cpr_list) : 
-                $grandchild_cpr_array = $child_cpr_list->getChildCPRArray(); ?>
+            <?php foreach ($child_cpr_list_array as $child_cpr_list) : ?>
         <tr>
             <td class="indent" colspan="<?= $number_of_indent_columns ?>"></td>
             <th colspan="<?= $number_of_total_columns - $number_of_indent_columns ?>"><?= $child_cpr_list->getNumber() ?>. <?= $child_cpr_list->getType() ?> (<?= $child_cpr_list->getTotalUnitsToDisplay() ?> units)</th>            
-        </tr>
-                <?php foreach ($grandchild_cpr_array as $grandchild_cpr) {
-                    qsc_cmp_display_cpr_table_row($child_cpr_list, $grandchild_cpr, $db_curriculum, '', true);
-                }
+        </tr>                
+                <?php qsc_cmp_display_cpr_list_table_section($child_cpr_list, $db_curriculum, $in_table_with_sublists, true);
+                $grandchild_cpr_array = $child_cpr_list->getChildCPRArray(); 
             endforeach;
-        else : 
+        else :  
             if (! $course_list) : ?>
-            <td colspan="<?= ((! $table_has_sub_lists) || $indented) ? 2 : 5 ?>" headers="<?= QSC_CMP_CPR_TH_ID_COURSES ?>"><?= QSC_CMP_TEXT_NONE_SPECIFIED ?></td>
+            <td colspan="<?= ((! $in_table_with_sublists) || $indented) ? 2 : 5 ?>" headers="<?= QSC_CMP_CPR_TH_ID_COURSES ?>"><?= QSC_CMP_TEXT_NONE_SPECIFIED ?></td>
             <?php else: ?>
-            <td colspan="<?= ((! $table_has_sub_lists) || $indented) ? 1 : 4  ?>" headers="<?= QSC_CMP_CPR_TH_ID_COURSES ?>"><?= $course_list->getHTML(); ?></td>
+            <td colspan="<?= ((! $in_table_with_sublists) || $indented) ? 1 : 4  ?>" headers="<?= QSC_CMP_CPR_TH_ID_COURSES ?>"><?= $course_list->getHTML(); ?></td>
             <td><?php qsc_cmp_display_link_button($course_list->getLinkToView(), "View Course List"); ?></td>
             <?php endif; ?>
         </tr>
-    <?php
-    endif;
+    <?php endif;    
 }
 
 /**

@@ -111,9 +111,9 @@ class Program extends CalendarComponent {
         
         $planName = '';
         $planType = '';
-        $planFullCode = '';
-        $planIsMedial = false;
+        $planCode = '';
         $planHasInternship = false;
+        $planHasDegree = true;
         $planInternshipCode = '';
 
         $degreeName = '';
@@ -121,20 +121,24 @@ class Program extends CalendarComponent {
         $degreeCode = '';
         
         $delimeter = QSC_CMP_PROGRAM_AND_PLAN_NAME_DELIMETER;
-        
-        if ($this->plan) {
-            $planName = $this->plan->getName();
-            $planType = $this->plan->getType();
-            $planFullCode = $this->plan->getFullCode();
-            $planIsMedial = $this->plan->isMedial();
-            $planHasInternship = $this->plan->hasInternship();
-            $planInternshipCode = $this->plan->getInternshipCode();
-        }
 
         if ($this->degree) {
             $degreeName = $this->degree->getName();
             $degreeType = $this->degree->getType();
             $degreeCode = $this->degree->getCode();
+        }
+        else {
+            $planHasDegree = false;
+        }
+        
+        if ($this->plan) {
+            $planName = $this->plan->getName();
+            $planType = $dbCurriculum->getPlanTypeForProgram(
+                $this->plan->getDBID(), $this->dbID);
+            $planTypeCode = CMD::getPlanTypeCode($planType, $degreeType);
+            $planCode = $this->plan->getCode();
+            $planHasInternship = $this->plan->hasInternship();
+            $planInternshipCode = $this->plan->getInternshipCode();
         }
         
         // Use the plan and degree information to put together the name,
@@ -143,12 +147,16 @@ class Program extends CalendarComponent {
             $this->type = "$planType ($degreeType)";
         }
         if (! $this->name) {
-            $this->name = "$planName $delimeter ".$this->type." $delimeter $degreeName";
+            $this->name = "$planName $delimeter ".$this->type;
+            if ($planType != CMD::TABLE_PROGRAM_AND_PLAN_TYPE_MINOR) {
+                $this->name .= " $delimeter $degreeName";
+            }
         }
         if (! $this->code) {
-            $this->code = ($planIsMedial) ?
-                $planFullCode :
-                "$planFullCode$delimeter$degreeCode" ;
+            $this->code = "$planCode$delimeter$planTypeCode";            
+            if ($degreeCode) {
+                $this->code .= "$delimeter$degreeCode";
+            }
             
             if ($planHasInternship){
                 $this->code .= " ($planName)<br/>";

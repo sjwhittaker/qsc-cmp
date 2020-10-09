@@ -112,7 +112,7 @@ else:
     <p>There are no PLLOs set for this CLLO.</p>
         <?php
         else :
-            qsc_cmp_display_pllo_table($pllo_array, $db_curriculum);
+            qsc_cmp_display_pllo_table($pllo_array, $db_curriculum, false);
         endif; ?>
 
     <h2>Institution Learning Outcomes</h2>
@@ -123,7 +123,7 @@ else:
         endif; ?>
 
         <?php if ($cllo->isTopLevel()) :
-            $child_CLLO_array = $db_curriculum->getChildCLLOs($cllo_id);
+            $child_CLLO_array = $db_curriculum->getChildCLLOs($cllo->getDBID());
             if (! empty($child_CLLO_array)) : ?>
     <h2>Child CLLOs</h2>
                 <?php qsc_cmp_display_cllo_table($child_CLLO_array);

@@ -28,7 +28,9 @@ include_once('../config/config.php');
 use Managers\CurriculumMappingDatabase as CMD;
 use Managers\CourseCalendarDatabase as CCD;
 
+use DatabaseObjects\Course;
 use DatabaseObjects\CourseEntry;
+use DatabaseObjects\LegacyCourseEntry;
 use DatabaseObjects\CalendarCourse;
 use DatabaseObjects\CourseLevelLearningOutcome as CLLO;
 use DatabaseObjects\PlanLevelLearningOutcome as PLLO;
@@ -57,7 +59,7 @@ else:
     <?php qsc_core_log_and_display_error("A course with that ID could not be retrieved from the database.");
     else :            
         qsc_cmp_start_html(array(QSC_CMP_START_HTML_TITLE => "View ".$course->getName()));
-        
+            
         // Did the user choose to delete a CLLO attached to this course?
         $form_result = qsc_cmp_get_form_result();
         if ($form_result == QSC_CMP_FORM_RESULT_DELETE_CLLO_SUCCESSFUL) {
@@ -84,7 +86,7 @@ else:
         $course_entry_array = $course->getCourseEntries();
         $is_cross_referenced = $course->getNumberOfCourseEntries() > 1;
         $column_span = floor(12 / $course->getNumberOfCourseEntries());
-?>
+        ?>
 
 <h1><?= $course->getName(); ?><?= ($course_name) ? ': '.$course_name : ''; ?></h1>
 
@@ -98,8 +100,15 @@ else:
             $departmental_notes = $course_entry->getNotes();
             ?>
     <div class="col-lg-<?= $column_span; ?>">
-        <?php if ($is_cross_referenced) : ?><h3 class="cross-referenced-course-name"><?= $course_entry->getName(); ?><?= ($calendar_course_name) ? ': '.$calendar_course_name : ''; ?></h3><?php endif; ?>
-            <?php if (! $calendar_course) : ?>    
+        <?php if ($is_cross_referenced) : ?>
+        <h3 class="cross-referenced-course-name"><?= $course_entry->getName(); ?><?= ($calendar_course_name) ? ': '.$calendar_course_name : ''; ?></h3>
+        <?php endif;
+        if ($course_entry instanceof LegacyCourseEntry) {
+            qsc_core_display_message(
+                '<i class="fas fa-exclamation-circle"></i> This course is no longer offered.', 
+                QSC_CORE_MESSAGE_TYPE_WARNING);
+        }        
+        if (! $calendar_course) : ?>    
         <p>This course code does not have a corresponding calendar entry.</p>    
             <?php else: ?>
         <p><?= $calendar_course->getDescription(); ?></p>

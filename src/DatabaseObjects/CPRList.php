@@ -178,5 +178,13 @@ class CPRList extends PlanRequirementList {
         
         return false;
     }
+    
+    /**
+     * 
+     */
+    public function hasChildCPRLists() {
+        return (! empty($this->childPRListArray));
+    }
+    
                
 }

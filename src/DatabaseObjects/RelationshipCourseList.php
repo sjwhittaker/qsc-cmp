@@ -82,7 +82,7 @@ class RelationshipCourseList extends CourseList {
         // Is there already a name specified?
         if ($listName) {
             // If so, use it in the HTML representation
-            $listHTML = '<a href="'.$this->getLinkToView().'">'.$this->textName.'</a>';            
+            $listHTML = '<a href="'.$this->getLinkToView().'">'.$listName.'</a>';            
         }
         else {
             // Build the name from the course information

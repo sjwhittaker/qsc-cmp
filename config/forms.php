@@ -134,7 +134,8 @@ function qsc_cmp_display_pllo_form($form_action, $form_id, $form_type, $submit_b
                 QSC_CORE_FORM_TRANSFER_POSSIBLE_OPTIONS => qsc_cmp_extract_form_option_data($plan_possible_array),
                 QSC_CORE_FORM_TRANSFER_CHOSEN_OPTIONS => qsc_cmp_extract_form_option_data($plan_chosen_array),
                 QSC_CORE_FORM_SELECT_HELP_ID => QSC_CMP_FORM_PLLO_PLAN_HELP,
-                QSC_CORE_FORM_SELECT_HELP_TEXT => "<strong>Required:</strong> a PLLO <strong>must</strong> be associated with <strong>at least</strong> one plan."
+                QSC_CORE_FORM_SELECT_HELP_TEXT => "a PLLO <strong>must</strong> be associated with <strong>at least</strong> one plan.",
+                QSC_CORE_FORM_REQUIRED => true
             )
         );
         ?>                 

@@ -99,6 +99,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_COURSE_SUBJECT_MAX_LENGTH = 10;
     public const TABLE_COURSE_NUMBER = "number";
     public const TABLE_COURSE_NUMBER_MAX_LENGTH = 10;
+    public const TABLE_COURSE_LEGACY = "legacy";
     public const TABLE_COURSE_NOTES = "notes";
     public const TABLE_COURSE_NOTES_MAX_LENGTH = 500;
     
@@ -261,6 +262,10 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_ILO_NOTES = "notes";
     public const TABLE_ILO_NOTES_MAX_LENGTH = 500;
     public const TABLE_ILO_PARENT_ID = "parent_id";
+
+    public const TABLE_LEGACY_COURSE_TO_COURSE = "legacy_course_to_course";
+    public const TABLE_LEGACY_COURSE_TO_COURSE_LEGACY_COURSE_ID = "legacy_course_id";
+    public const TABLE_LEGACY_COURSE_TO_COURSE_COURSE_ID = "course_id";
     
     public const TABLE_PLAN = "plan";
     public const TABLE_PLAN_ID = "id";
@@ -268,14 +273,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_PLAN_NAME_MAX_LENGTH = 75;    
     public const TABLE_PLAN_CODE = "code";
     public const TABLE_PLAN_CODE_MAX_LENGTH = 10;    
-    public const TABLE_PLAN_TYPE = "type";
-    public const TABLE_PLAN_TYPE_MAJOR = "Major";
-    public const TABLE_PLAN_TYPE_MINOR = "Minor";
-    public const TABLE_PLAN_TYPE_SPECIALIZATION = "Specialization";
-    public const TABLE_PLAN_TYPE_MEDIAL = "Medial";
-    public const TABLE_PLAN_TYPE_GENERAL = "General";
-    public const TABLE_PLAN_TYPE_SUB_PLAN = "Sub-Plan";
     public const TABLE_PLAN_INTERNSHIP = "internship";
+    public const TABLE_PLAN_DESCRIPTIVE_NAME = "descriptive_name";
+    public const TABLE_PLAN_DESCRIPTIVE_NAME_MAX_LENGTH = 75;    
     public const TABLE_PLAN_TEXT = "text";
     public const TABLE_PLAN_TEXT_MAX_LENGTH = 500;    
     public const TABLE_PLAN_PRIOR_TO = "prior_to";
@@ -336,6 +336,13 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_PROGRAM_AND_PLAN = "program_and_plan";
     public const TABLE_PROGRAM_AND_PLAN_PROGRAM_ID = "program_id";
     public const TABLE_PROGRAM_AND_PLAN_PLAN_ID = "plan_id";    
+    public const TABLE_PROGRAM_AND_PLAN_TYPE = "type";
+    public const TABLE_PROGRAM_AND_PLAN_TYPE_MAJOR = "Major";
+    public const TABLE_PROGRAM_AND_PLAN_TYPE_MINOR = "Minor";
+    public const TABLE_PROGRAM_AND_PLAN_TYPE_SPECIALIZATION = "Specialization";
+    public const TABLE_PROGRAM_AND_PLAN_TYPE_MEDIAL = "Medial";
+    public const TABLE_PROGRAM_AND_PLAN_TYPE_GENERAL = "General";
+    public const TABLE_PROGRAM_AND_PLAN_TYPE_SUB_PLAN = "Sub-Plan";
     
     public const TABLE_REVISION = "revision";
     public const TABLE_REVISION_ID = "id";
@@ -453,19 +460,6 @@ class CurriculumMappingDatabase extends DatabaseManager {
             self::TABLE_DEGREE_TYPE_MUSIC_THEATRE,
             self::TABLE_DEGREE_TYPE_PHYSICAL_EDUCATION);        
     }
-
-    /**
-     * 
-     * @return type
-     */
-    public static function getPlanTypes() {
-        return array(self::TABLE_PLAN_TYPE_MAJOR,
-            self::TABLE_PLAN_TYPE_MINOR,
-            self::TABLE_PLAN_TYPE_SPECIALIZATION,
-            self::TABLE_PLAN_TYPE_MEDIAL.
-            self::TABLE_PLAN_TYPE_GENERAL,
-            self::TABLE_PLAN_TYPE_SUB_PLAN);        
-    }
     
     /**
      * 
@@ -548,6 +542,26 @@ class CurriculumMappingDatabase extends DatabaseManager {
         
         return $argumentArray;
     }
+    
+    /**
+     * 
+     * @param type $includeExplanation
+     * @return string
+     */
+    public static function getPlanTypeCode($planType, $degreeType) {
+        switch ($planType) {
+            case self::TABLE_PROGRAM_AND_PLAN_TYPE_MAJOR :
+                return 'M';
+            case self::TABLE_PROGRAM_AND_PLAN_TYPE_MINOR :
+                return ($degreeType == self::TABLE_DEGREE_TYPE_ARTS) ? 'Y' : 'Z';
+            case self::TABLE_PROGRAM_AND_PLAN_TYPE_SPECIALIZATION :
+                return 'P';
+            case self::TABLE_PROGRAM_AND_PLAN_TYPE_GENERAL :
+                return 'G';
+            default:
+                return '';
+        }
+    }    
     
 
     /**************************************************************************
@@ -757,7 +771,29 @@ class CurriculumMappingDatabase extends DatabaseManager {
             $this->getQueryResults($query, array($departmentIDValue)), 
             'CourseEntry');
         return Course::buildCoursesFromCourseEntries($courseEntryArray);     
-    }    
+    }
+
+    /**
+     * 
+     * @param type $legacyCourseIDValue
+     * @return type
+     */
+    public function getCoursesRelatedToLegacyCourse($legacyCourseIDValue) {
+        $course = self::TABLE_COURSE;
+        $courseID = self::TABLE_COURSE_ID;
+        $courseSubject = self::TABLE_COURSE_SUBJECT;
+        $courseNumber = self::TABLE_COURSE_NUMBER;   
+
+        $lcac = self::TABLE_LEGACY_COURSE_TO_COURSE;
+        $lcacLegacyCourseID = self::TABLE_LEGACY_COURSE_TO_COURSE_LEGACY_COURSE_ID;
+        $lcacCourseID = self::TABLE_LEGACY_COURSE_TO_COURSE_COURSE_ID;
+        
+        $query = "SELECT $course.* FROM $course JOIN (SELECT * FROM $lcac WHERE $lcac.$lcacLegacyCourseID = ?) AS $lcac ON $course.$courseID = $lcac.$lcacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber ASC";
+        $courseEntryArray = $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($legacyCourseIDValue)), 
+            'CourseEntry');
+        return Course::buildCoursesFromCourseEntries($courseEntryArray);         
+    }
     
     
     /**************************************************************************
@@ -845,7 +881,25 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $resultRow = $this->getQueryResult($query, array($programIDValue));
         
         return $this->createObjectFromDatabaseRow($resultRow, 'Plan');
-    }
+    }   
+    
+    /**
+     * 
+     * @param type $planIDValue
+     * @param type $programIDValue
+     * @return type
+     */
+    public function getPlanTypeForProgram($planIDValue, $programIDValue) {                
+        $pap = self::TABLE_PROGRAM_AND_PLAN;
+        $papPlanID = self::TABLE_PROGRAM_AND_PLAN_PLAN_ID;
+        $papProgramID = self::TABLE_PROGRAM_AND_PLAN_PROGRAM_ID;
+        $papType = self::TABLE_PROGRAM_AND_PLAN_TYPE;
+        
+        $query = "SELECT $papType FROM $pap WHERE $pap.$papPlanID = ? AND $pap.$papProgramID = ?";
+        $resultRow = $this->getQueryResult($query, array($planIDValue, $programIDValue));
+        
+        return $resultRow[$papType];
+    }    
     
     /**
      * 
@@ -912,15 +966,16 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $plan = self::TABLE_PLAN;
         $planID = self::TABLE_PLAN_ID;
         $planName = self::TABLE_PLAN_NAME;
-        $planType = self::TABLE_PLAN_TYPE;
-        $planTypeSubPlan = self::TABLE_PLAN_TYPE_SUB_PLAN;
                 
         $dap = self::TABLE_DEPARTMENT_AND_PLAN;
         $dapPlanID = self::TABLE_DEPARTMENT_AND_PLAN_PLAN_ID;
         $dapDepartmentID = self::TABLE_DEPARTMENT_AND_PLAN_DEPARTMENT_ID;
         $dapRole = self::TABLE_DEPARTMENT_AND_PLAN_ROLE;
         
-        $query = "SELECT $plan.* FROM (SELECT * FROM $plan WHERE $planType <> '$planTypeSubPlan') AS $plan JOIN (SELECT * FROM $dap WHERE $dap.$dapDepartmentID = ?) AS $dap ON $dap.$dapPlanID = $plan.$planID ORDER BY $dap.$dapRole, $plan.$planName ASC";
+        $cap = self::TABLE_CPRLIST_TO_PLAN;
+        $capChildPlanID = self::TABLE_CPRLIST_TO_PLAN_CHILD_PLAN_ID;
+        
+        $query = "SELECT $plan.* FROM (SELECT * FROM $plan WHERE $plan.$planID NOT IN (SELECT DISTINCT $plan.$planID FROM $plan JOIN $cap on $plan.$planID = $cap.$capChildPlanID)) AS $plan JOIN (SELECT * FROM $dap WHERE $dap.$dapDepartmentID = ?) AS $dap ON $dap.$dapPlanID = $plan.$planID ORDER BY $dap.$dapRole, $plan.$planName ASC";
         $resultPlans = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($departmentIDValue)), 
             'Plan');
@@ -979,10 +1034,6 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @return type
      */
     public function getProgramsFromPlan($planIDValue) {
-        $plan = self::TABLE_PLAN;
-        $planID = self::TABLE_PLAN_ID;
-        $planName = self::TABLE_PLAN_NAME;
-
         $program = self::TABLE_PROGRAM;
         $programID = self::TABLE_PROGRAM_ID;
         $programName = self::TABLE_PROGRAM_NAME;                
@@ -991,10 +1042,20 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $papPlanID = self::TABLE_PROGRAM_AND_PLAN_PLAN_ID;
         $papProgramID = self::TABLE_PROGRAM_AND_PLAN_PROGRAM_ID;
         
+        $programArray = array();
+        $parentPlan = $this->getAncestorPlanForPlan($planIDValue);
+        while ($parentPlan != null) {
+            $programArray = array_merge($programArray,
+                $this->getProgramsFromPlan($parentPlan->getDBID()));
+            $parentPlan = $this->getAncestorPlanForPlan($parentPlan->getDBID());
+        }        
+        
         $query = "SELECT $program.* FROM $program JOIN (SELECT * FROM $pap WHERE $pap.$papPlanID = ?) AS $pap ON $program.$programID = $pap.$papProgramID ORDER BY $program.$programName ASC";
-        return $this->createObjectsFromDatabaseRows(
+        $queryResults = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($planIDValue)), 
             'Program');
+        
+        return array_merge($programArray, $queryResults);
     }
     
     /**
@@ -1183,8 +1244,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
     
     /**
      * 
-     * @param type $planIDValue
-     * @param type $cprTypeValue
+     * @param type $cprIDValue
      * @return type
      */
     public function getParentCPRListForCPR($cprIDValue) {
@@ -1206,6 +1266,27 @@ class CurriculumMappingDatabase extends DatabaseManager {
             $this->getQueryResult($query, array($cprIDValue)), 
             'CPRList');        
     }
+    
+    /**
+     * 
+     * @param type $cprListIDValue
+     * @return type
+     */
+    public function getParentCPRListForCPRList($cprListIDValue) {
+        $cprl = self::TABLE_CPRLIST;
+        $cprlID = self::TABLE_CPRLIST_ID;
+        $cprlNumber = self::TABLE_CPRLIST_NUMBER;
+        $cprlType = self::TABLE_CPRLIST_TYPE;        
+        
+        $cac = self::TABLE_CPRLIST_TO_CPRLIST;
+        $cacCPRLParentID = self::TABLE_CPRLIST_TO_CPRLIST_PARENT_ID;
+        $cacCPRLChildID = self::TABLE_CPRLIST_TO_CPRLIST_CHILD_ID;
+        
+        $query = "SELECT $cprl.* FROM $cprl JOIN (SELECT * FROM $cac WHERE $cac.$cacCPRLChildID = ?) AS $cac ON $cprl.$cprlID = $cac.$cacCPRLParentID";
+        return $this->createObjectFromDatabaseRow(
+            $this->getQueryResult($query, array($cprListIDValue)), 
+            'CPRList');        
+    }    
     
     /**
      * 
@@ -2025,7 +2106,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $query = "SELECT * FROM $table WHERE $parentColumn = ? ORDER BY $orderByColumn ASC";
 
         return $this->getQueryResults($query, array($parentValue));
-    }
+    }       
 
     /**
      * Finds all top-level CLLOs.
@@ -2080,6 +2161,51 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 self::TABLE_PLLO_NUMBER),
             'PlanLevelLearningOutcome');
     }
+    
+    /**
+     * 
+     * @param type $plloIDValue
+     * @return int
+     */
+    public function getPLLOHeight($plloIDValue) {
+        $childPLLORows = $this->getChildRows(self::TABLE_PLLO, 
+            self::TABLE_PLLO_PARENT_ID, $plloIDValue, self::TABLE_PLLO_NUMBER);
+        
+        if (empty($childPLLORows)) {
+            return 1;
+        }
+        
+        $maxHeight = 1;
+        foreach ($childPLLORows as $childPLLORow) {
+            $childHeight = $this->getPLLOHeight(
+                $childPLLORow[self::TABLE_PLLO_ID]);
+            if ($childHeight > $maxHeight) {
+                $maxHeight = $childHeight;
+            }
+        }
+        
+        return $maxHeight + 1;        
+    }   
+        
+    /**
+     * 
+     * @param type $plloIDValue
+     * @return int
+     */
+    public function getPLLODepth($plloIDValue) {
+        $pllo = $this->getPLLOFromID($plloIDValue);
+        
+        if (! $pllo) {
+            return 0;
+        }
+        
+        $parentPLLOID = $pllo->getParentDBID();
+        if (! $parentPLLOID) {
+            return 1;
+        }
+        
+        return 1 + $this->getPLLODepth($parentPLLOID);        
+    }        
 
     /**
      * Finds all top-level ILOs.
@@ -2519,7 +2645,35 @@ class CurriculumMappingDatabase extends DatabaseManager {
             $this->getQueryResults($query, array_merge($excludePLLOIDValueArray, $idValueArray)),
             'PlanLevelLearningOutcome'
         );
-    }     
+    }
+    
+    /**
+     * Extracts the PLLOs associated with an administering department's plans.
+     *
+     * @param $departmentIDValue     
+     */
+    public function getTopLevelPLLOsForAdministeringDepartmentsPlans($departmentIDValue) {
+        $dap = self::TABLE_DEPARTMENT_AND_PLAN;
+        $dapPlanID = self::TABLE_DEPARTMENT_AND_PLAN_PLAN_ID;
+        $dapDepartmentID = self::TABLE_DEPARTMENT_AND_PLAN_DEPARTMENT_ID;
+        $dapRole = self::TABLE_DEPARTMENT_AND_PLAN_ROLE;
+        $dapRoleAdministrator = self::TABLE_DEPARTMENT_AND_PLAN_ROLE_ADMINISTRATOR;
+
+        $pap = self::TABLE_PLAN_AND_PLLO;
+        $papPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
+        $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
+
+        $pllo = self::TABLE_PLLO;
+        $plloID = self::TABLE_PLLO_ID;
+        $plloNumber = self::TABLE_PLLO_NUMBER;
+        $plloParentID = self::TABLE_PLLO_PARENT_ID;
+        
+        $query = "SELECT DISTINCT $pllo.* FROM (SELECT * FROM $dap WHERE $dap.$dapDepartmentID = ? AND $dap.$dapRole = '$dapRoleAdministrator') AS $dap JOIN $pap ON $dap.$dapPlanID = $pap.$papPlanID JOIN (SELECT * FROM $pllo WHERE $pllo.$plloParentID IS NULL) AS $pllo ON $pap.$papPLLOID = $pllo.$plloID ORDER BY $pllo.$plloNumber";                
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($departmentIDValue)),
+            'PlanLevelLearningOutcome'
+        );
+    }    
 
     /**
      * Extracts the PLLOs associated with an Plan and DLE.
@@ -2995,7 +3149,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
             $excludeIDArray = array()) {
 
         $completeSearchColumnArray = empty($searchColumnArray) ?
-            array(self::TABLE_PLAN_NAME, self::TABLE_PLAN_CODE, self::TABLE_PLAN_TYPE, self::TABLE_PLAN_TEXT, self::TABLE_PLAN_NOTES) :
+            array(self::TABLE_PLAN_NAME, self::TABLE_PLAN_CODE, self::TABLE_PLAN_TEXT, self::TABLE_PLAN_NOTES) :
             $searchColumnArray;
         
         return $this->findMatchingObjects('Plan', 

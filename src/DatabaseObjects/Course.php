@@ -197,12 +197,39 @@ class Course {
             }
             else {
                 $courseName = implode(QSC_CMP_COURSE_CROSS_REFERENCE_DELIMETER,
-                    qsc_core_map_member_function($this->courseEntryArray, 'getCode'));                
+                    qsc_core_map_member_function($this->courseEntryArray, 'getName'));                
             }
         }
         
         return $courseName;
     }
+    
+    /**
+     * 
+     * @return type
+     */
+    public function getNameHTML() {
+        $courseName = '';
+        
+        // If there's one CourseEntry, use it
+        if ($this->courseEntryArraySize === 1) {
+            $courseName = $this->courseEntryArray[0]->getNameHTML();
+        }
+        else {
+            // This is a cross-reference course - do they have the same number?
+            $courseNumber = $this->getNumber();
+            
+            if ($courseNumber !== false) {
+                $courseName = $this->getName();                
+            }
+            else {
+                $courseName = implode(QSC_CMP_COURSE_CROSS_REFERENCE_DELIMETER,
+                    qsc_core_map_member_function($this->courseEntryArray, 'getNameHTML'));                
+            }
+        }
+        
+        return $courseName;
+    }    
     
     /**
      * 
@@ -220,7 +247,7 @@ class Course {
     public function getCalendarName($dbCalendar) {
         // Get all of the course codes from the CourseEntries
         $courseCodeArray = qsc_core_map_member_function($this->courseEntryArray,
-            'getCode');
+            'getName');
 
         // Get the corresponding calendar courses
         $calendarCourseArray = $dbCalendar->getCoursesFromIDs($courseCodeArray);
@@ -269,7 +296,9 @@ class Course {
      * @return      A string containing the link
      */
     public function getLinkToView() {
-        return qsc_core_create_link_with_id(QSC_CMP_COURSE_VIEW_PAGE_LINK, $this->getDBID());
+        return $this->isLegacyCourse() ?
+            qsc_core_create_link_with_id(QSC_CMP_LEGACY_COURSE_VIEW_PAGE_LINK, $this->getDBID()) :
+            qsc_core_create_link_with_id(QSC_CMP_COURSE_VIEW_PAGE_LINK, $this->getDBID());
     }
     
     /**
@@ -280,7 +309,7 @@ class Course {
     public function getAnchorToView($dbCalendar = null) {
         $calendarName = ($dbCalendar) ? $this->getCalendarName($dbCalendar) : '';
         
-        $anchor = '<a href="'.$this->getLinkToView().'">'.$this->getName();
+        $anchor = '<a href="'.$this->getLinkToView().'">'.$this->getNameHTML();
         if ($this->getUnitsAsFloat()) {
             $anchor .= '/'.$this->getUnitsToDisplay();
         }
@@ -304,5 +333,37 @@ class Course {
         }
         
         return null;
+    }
+    
+    /**
+     * 
+     * @return boolean
+     */
+    public function hasLegacyCourse() {
+        foreach ($this->courseEntryArray as $courseEntry) {
+            if ($courseEntry instanceof LegacyCourseEntry) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public function isLegacyCourse() {
+        return ($this->courseEntryArraySize == 1) && 
+            ($this->courseEntryArray[0] instanceof LegacyCourseEntry);
+    }
+    
+    /**
+     * 
+     * @return type
+     */
+    public function getLegacyCourseEntry() {
+        return $this->isLegacyCourse() ?
+            $this->courseEntryArray[0] : null;
     }
 }

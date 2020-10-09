@@ -84,7 +84,7 @@ else:
     <p>There are no PLLOs set for this ILO.</p>
         <?php
         else :
-            qsc_cmp_display_pllo_table($pllo_array, $db_curriculum);
+            qsc_cmp_display_pllo_table($pllo_array, $db_curriculum, false);
         endif; ?>
 
     <h2>Course Level Learning Outcomes</h2>

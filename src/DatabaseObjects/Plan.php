@@ -45,14 +45,14 @@ class Plan extends CalendarComponent {
         $id = $argArray[CMD::TABLE_PLAN_ID];
         $name = $argArray[CMD::TABLE_PLAN_NAME];
         $code = $argArray[CMD::TABLE_PLAN_CODE];
-        $type = $argArray[CMD::TABLE_PLAN_TYPE];
         $internship = $argArray[CMD::TABLE_PLAN_INTERNSHIP];
+        $descriptive_name = $argArray[CMD::TABLE_PLAN_DESCRIPTIVE_NAME];
         $text = $argArray[CMD::TABLE_PLAN_TEXT];
         $prior_to = $argArray[CMD::TABLE_PLAN_PRIOR_TO];
         $number = $argArray[CMD::TABLE_PLAN_NUMBER];
         $notes = $argArray[CMD::TABLE_PLAN_NOTES];
 
-        return new Plan($id, $name, $code, $type, $internship, $text, $prior_to, $number, $notes);
+        return new Plan($id, $name, $code, $internship, $descriptive_name, $text, $prior_to, $number, $notes);
     }
         
     /**
@@ -98,9 +98,9 @@ class Plan extends CalendarComponent {
      * Member Variables
      *************************************************************************/
     protected $code = null;
-    protected $type = null;
     protected $internship = null;
     protected $text = null;
+    protected $descriptiveName = null;
     protected $prior_to = null;
     protected $number = null;
     protected $notes = null;
@@ -117,20 +117,19 @@ class Plan extends CalendarComponent {
      * @param $argDBID         The plan's database integer ID
      * @param $argName       The plan's string name
      * @param type $argCode
-     * @param type $argType
      * @param type $argInternship
      * @param type $argText
      * @param type $argPriorTo
      * @param type $argNumber
      * @param type $argNotes
      */
-    public function __construct($argDBID, $argName, $argCode, $argType, 
-        $argInternship, $argText = null, $argPriorTo = null, $argNumber = null, $argNotes = null) {
+    public function __construct($argDBID, $argName, $argCode, $argInternship, 
+            $argDescriptiveName = null, $argText = null, $argPriorTo = null, $argNumber = null, $argNotes = null) {
         parent::__construct($argDBID, $argName);
         
         $this->code = $argCode;
-        $this->type = $argType;
         $this->internship = $argInternship;
+        $this->descriptiveName = $argDescriptiveName ? $argDescriptiveName : $argName;
         $this->text = $argText;
         $this->prior_to = $argPriorTo;
         $this->number = $argNumber;
@@ -167,17 +166,17 @@ class Plan extends CalendarComponent {
      * 
      * @return type
      */
-    public function getType() {
-        return $this->type;
-    }
-    
-    /**
-     * 
-     * @return type
-     */
     public function hasInternship() {
         return $this->internship;
     }
+    
+    /** 
+     * 
+     * @return type
+     */
+    public function getDescriptiveName() {
+       return $this->descriptiveName;   
+    }    
     
     /** 
      * 
@@ -213,15 +212,7 @@ class Plan extends CalendarComponent {
      */
     public function getNotes($noneOption = null) {
         return qsc_core_get_none_if_empty($this->notes, $noneOption);   
-    }
-    
-    /**
-     * 
-     * @return type
-     */
-    public function isMedial() {
-        return ($this->type == CMD::TABLE_PLAN_TYPE_MEDIAL);
-    }
+    }    
     
     /**
      * 
@@ -256,15 +247,7 @@ class Plan extends CalendarComponent {
         }
         
         return false;
-    }
-    
-    /**
-     * 
-     * @return type
-     */
-    public function isSubPlan() {
-        return ($this->type == CMD::TABLE_PLAN_TYPE_SUB_PLAN);
-    }
+    }    
     
     /**
      * 
@@ -280,46 +263,7 @@ class Plan extends CalendarComponent {
         
         return array();
     }
-    
-    /**
-     * 
-     * @param type $includeExplanation
-     * @return string
-     */
-    public function getTypeCode($includeExplanation = false) {
-        switch ($this->type) {
-            case CMD::TABLE_PLAN_TYPE_MAJOR :
-                return 'M';
-            case CMD::TABLE_PLAN_TYPE_MINOR :
-                return '';
-            case CMD::TABLE_PLAN_TYPE_SPECIALIZATION :
-                return 'P';
-            case CMD::TABLE_PLAN_TYPE_MEDIAL :
-                $code = $this->code;
-                $typeCode = $includeExplanation ?
-                    "$code where [‐‐‐‐] is a second subject of study" :
-                    $code;
-                return $typeCode;
-            case CMD::TABLE_PLAN_TYPE_GENERAL :
-                return 'G';
-            default:
-                return '';
-        }
-    }
-    
-    /**
-     * 
-     * @return type
-     */
-    public function getFullCode() {
-        $code = $this->code;
-        $typeCode = $this->getTypeCode();
-        
-        return ($this->isMedial()) ?
-            $typeCode : 
-            $code.QSC_CMP_PROGRAM_AND_PLAN_CODE_DELIMETER.$typeCode;
-    }
-    
+            
     /**
      * 
      * @return type
@@ -344,7 +288,7 @@ class Plan extends CalendarComponent {
      * @return type
      */
     public function getAnchorToView() {
-        return '<a href="'.$this->getLinkToView().'">'.$this->getName().' ('.$this->getCode().')'.'</a>';
+        return '<a href="'.$this->getLinkToView().'">'.$this->getDescriptiveName().' ('.$this->getCode().')'.'</a>';
     }
     
     /**

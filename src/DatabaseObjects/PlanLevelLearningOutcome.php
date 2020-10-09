@@ -94,6 +94,23 @@ class PlanLevelLearningOutcome extends LearningOutcome {
         return true;
     }
     
+    /**
+     * 
+     * @return type
+     */
+    public static function getSortFunction() {
+        return function($a, $b) {
+            $aNumber = $a->getNumber();
+            $bNumber = $b->getNumber();
+            
+            $numCmp = strcmp($aNumber, $bNumber);
+            
+            return ($numCmp == 0) ?
+                strcmp($a->getPrefix(), $b->getPrefix()) :
+                $numCmp;
+        };        
+    }      
+    
     
     /**************************************************************************
      * Member Variables

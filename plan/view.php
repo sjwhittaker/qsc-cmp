@@ -52,39 +52,37 @@ else :
     <?php qsc_core_log_and_display_error("A plan with that ID could not be retrieved from the database.");
     else :
         qsc_cmp_start_html(array(QSC_CMP_START_HTML_TITLE => "View ".$plan->getName()));
-        
+
+        $parent_plan = $db_curriculum->getAncestorPlanForPlan($plan_id);
+
         $program_array = $db_curriculum->getProgramsFromPlan($plan_id);
+        $program_achor_array = qsc_core_map_member_function($program_array, 
+            'getAnchorToView');
                
         $department_array = $db_curriculum->getDepartmentsForPlan($plan_id);
         
-        $pllo_array = array();
-        
-        $type_number = 1;
-
-        // Determine the type text, especially with respect to any possible
-        // parent plan
-        $type_text = $plan->getType();
-        if ($plan->isSubPlan()) {
-            $parent_plan = $db_curriculum->getAncestorPlanForPlan($plan_id);
-            $type_text = "$type_text for ".$parent_plan->getAnchorToView();
-        }
-        
         $course_matrix_report_link = qsc_cmp_get_link_to_course_matrix(
-            QSC_CORE_QUERY_STRING_NAME_PLAN_ID, $plan_id);                 
+            QSC_CORE_QUERY_STRING_NAME_PLAN_ID, $plan_id);
+        $plan_pllos_report_link = qsc_core_create_link_with_id(
+            QSC_CMP_PLAN_VIEW_PLLOS_LINK, $plan_id);        
         ?>
 
-<h1><?= $plan->getName() ?></h1>
+<h1><?= $plan->getDescriptiveName() ?></h1>
 
 <div class="row">
     <div class="col-auto">
         <?php qsc_cmp_display_link_button($course_matrix_report_link, "View Required Course Matrix"); ?>
     </div>
+    <div class="col-auto">
+        <?php qsc_cmp_display_link_button($plan_pllos_report_link, "View PLLOs for This Plan"); ?>
+    </div>
 </div>
 
         <?php qsc_cmp_display_property_columns(array(
             "Code" => $plan->getCode(),
-            "Type" => $type_text,
             "Subject" => Plan::getSubjectHTML($plan, $db_curriculum),
+            "Programs" => empty($program_achor_array) ? QSC_CMP_TEXT_NONE_SPECIFIED : join("<br/>", $program_achor_array),
+            "Parent Plan" => ($parent_plan) ? $parent_plan->getAnchorToView() : QSC_CMP_TEXT_NONE_SPECIFIED,
             "Professional Internship Option" => ($plan->hasInternship()) ? "Yes" : "No",
             "Enrolment End Date" => $plan->getPriorTo(),
             "Notes" => $plan->getNotes()            

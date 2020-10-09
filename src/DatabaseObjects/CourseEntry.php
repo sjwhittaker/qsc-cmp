@@ -51,8 +51,12 @@ class CourseEntry extends DatabaseObject {
         $subject = $argArray[CMD::TABLE_COURSE_SUBJECT];
         $number = $argArray[CMD::TABLE_COURSE_NUMBER];
         $notes = $argArray[CMD::TABLE_COURSE_NOTES];
-         
-        return new CourseEntry($id, $subject, $number, $notes);
+
+        $legacy = $argArray[CMD::TABLE_COURSE_LEGACY];
+
+        return $legacy ?
+            new LegacyCourseEntry($id, $subject, $number, $notes) :
+            new CourseEntry($id, $subject, $number, $notes);
     }
     
     /**
@@ -73,7 +77,7 @@ class CourseEntry extends DatabaseObject {
      **************************************************************************/
     protected $subject = null;
     protected $number = null;
-    protected $notes = null;
+    protected $notes = null;    
      
  
     /**************************************************************************
@@ -140,23 +144,22 @@ class CourseEntry extends DatabaseObject {
      * 
      * @return type
      */
+    public function getNameHTML() {
+        return $this->getName();
+    }    
+    
+    /**
+     * 
+     * @return type
+     */
     public function getCode() {
         return $this->getName();
-    }
+    }       
     
 
     /**************************************************************************
      * Member Functions
      **************************************************************************/
-    /**
-     * Creates a link to view this CourseEntry via its Course using its ID.
-     *
-     * @return      A string containing the link
-     */
-    public function getLinkToView() {
-        return self::getLinkWithID(QSC_CMP_COURSE_VIEW_PAGE_LINK);
-    }
-        
     /**
      * Creates the key for the corresponding course in the course calendar 
      * database, which is the subject followed by the number.
