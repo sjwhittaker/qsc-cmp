@@ -112,7 +112,7 @@ else:
     <p>There are no PLLOs set for this CLLO.</p>
         <?php
         else :
-            qsc_cmp_display_pllo_table($pllo_array, $db_curriculum, false);
+            qsc_cmp_display_pllo_table($pllo_array, $db_curriculum, false, false);
         endif; ?>
 
     <h2>Institution Learning Outcomes</h2>

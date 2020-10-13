@@ -84,12 +84,12 @@ function qsc_cmp_display_pllo_form($form_action, $form_id, $form_type, $submit_b
         // Get the plan(s) for this PLLO andf the others
         $plan_chosen_array = $db_curriculum->getPlansFromPLLO($pllo_id);
         $plan_possible_array = $db_curriculum->getAllPlans(
-            qsc_core_get_db_id_array($plan_chosen_array));
+            qsc_core_get_db_id_array($plan_chosen_array));   
         
         // Get all possible PLLOs based on the selected plans
         $plan_chosen_array_ids = qsc_core_map_member_function($plan_chosen_array, 'getDBID');
         $pllo_array = $db_curriculum->getPLLOsForPlans($plan_chosen_array_ids, array($pllo_id));
-        usort($pllo_array, PLLO::getSortFunction());
+        usort($pllo_array, PLLO::getSortFunction());              
 
         // Get all of the direct ILOs for this PLLO
         $ilo_chosen_array = $db_curriculum->getDirectILOsForPLLO($pllo_id);
@@ -137,7 +137,7 @@ function qsc_cmp_display_pllo_form($form_action, $form_id, $form_type, $submit_b
                 QSC_CORE_FORM_SELECT_HELP_TEXT => "a PLLO <strong>must</strong> be associated with <strong>at least</strong> one plan.",
                 QSC_CORE_FORM_REQUIRED => true
             )
-        );
+        );        
         ?>                 
     </div>
     <div class="form-section">                

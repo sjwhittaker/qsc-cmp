@@ -872,12 +872,13 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $plan = self::TABLE_PLAN;
         $planID = self::TABLE_PLAN_ID;
         $planName = self::TABLE_PLAN_NAME;
+        $planDescriptiveName = self::TABLE_PLAN_DESCRIPTIVE_NAME;        
                 
         $pap = self::TABLE_PROGRAM_AND_PLAN;
         $papPlanID = self::TABLE_PROGRAM_AND_PLAN_PLAN_ID;
         $papProgramID = self::TABLE_PROGRAM_AND_PLAN_PROGRAM_ID;
         
-        $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pap WHERE $pap.$papProgramID = ?) AS $pap ON $pap.$papPlanID = $plan.$planID ORDER BY $plan.$planName ASC";
+        $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pap WHERE $pap.$papProgramID = ?) AS $pap ON $pap.$papPlanID = $plan.$planID ORDER BY $plan.$planName, $plan.$planDescriptiveName ASC";
         $resultRow = $this->getQueryResult($query, array($programIDValue));
         
         return $this->createObjectFromDatabaseRow($resultRow, 'Plan');
@@ -910,12 +911,13 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $plan = self::TABLE_PLAN;
         $planID = self::TABLE_PLAN_ID;
         $planName = self::TABLE_PLAN_NAME;
+        $planDescriptiveName = self::TABLE_PLAN_DESCRIPTIVE_NAME;
                 
         $pap = self::TABLE_PLAN_AND_PLLO;
         $papPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
         $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
         
-        $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pap WHERE $pap.$papPLLOID = ?) AS $pap ON $pap.$papPlanID = $plan.$planID ORDER BY $plan.$planName ASC";
+        $query = "SELECT $plan.* FROM $plan JOIN (SELECT * FROM $pap WHERE $pap.$papPLLOID = ?) AS $pap ON $pap.$papPlanID = $plan.$planID ORDER BY $plan.$planName, $plan.$planDescriptiveName ASC";
         $resultPlans = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($plloIDValue)), 
             'Plan');
@@ -966,6 +968,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $plan = self::TABLE_PLAN;
         $planID = self::TABLE_PLAN_ID;
         $planName = self::TABLE_PLAN_NAME;
+        $planDescriptiveName = self::TABLE_PLAN_DESCRIPTIVE_NAME;
                 
         $dap = self::TABLE_DEPARTMENT_AND_PLAN;
         $dapPlanID = self::TABLE_DEPARTMENT_AND_PLAN_PLAN_ID;
@@ -975,7 +978,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cap = self::TABLE_CPRLIST_TO_PLAN;
         $capChildPlanID = self::TABLE_CPRLIST_TO_PLAN_CHILD_PLAN_ID;
         
-        $query = "SELECT $plan.* FROM (SELECT * FROM $plan WHERE $plan.$planID NOT IN (SELECT DISTINCT $plan.$planID FROM $plan JOIN $cap on $plan.$planID = $cap.$capChildPlanID)) AS $plan JOIN (SELECT * FROM $dap WHERE $dap.$dapDepartmentID = ?) AS $dap ON $dap.$dapPlanID = $plan.$planID ORDER BY $dap.$dapRole, $plan.$planName ASC";
+        $query = "SELECT $plan.* FROM (SELECT * FROM $plan WHERE $plan.$planID NOT IN (SELECT DISTINCT $plan.$planID FROM $plan JOIN $cap on $plan.$planID = $cap.$capChildPlanID)) AS $plan JOIN (SELECT * FROM $dap WHERE $dap.$dapDepartmentID = ?) AS $dap ON $dap.$dapPlanID = $plan.$planID ORDER BY $dap.$dapRole, $plan.$planName, $plan.$planDescriptiveName ASC";
         $resultPlans = $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($departmentIDValue)), 
             'Plan');
@@ -1198,12 +1201,14 @@ class CurriculumMappingDatabase extends DatabaseManager {
      */
     public function getAllParentPlans() {
         $plan = self::TABLE_PLAN;
-        $planType = self::TABLE_PLAN_TYPE;
+        $planID = self::TABLE_PLAN_ID;
         $planName = self::TABLE_PLAN_NAME;
-
-        $planTypeSubPlan = self::TABLE_PLAN_TYPE_SUB_PLAN;
+        $planDescriptiveName = self::TABLE_PLAN_DESCRIPTIVE_NAME;
         
-        $query = "SELECT * FROM $plan WHERE $planType <> '$planTypeSubPlan' ORDER BY $planName ASC";
+        $ctp = self::TABLE_CPRLIST_TO_PLAN;
+        $ctpChildID = self::TABLE_CPRLIST_TO_PLAN_CHILD_PLAN_ID;
+        
+        $query = "SELECT $plan.* FROM $plan LEFT JOIN cprlist_to_plan ON $plan.$planID = $ctp.$ctpChildID WHERE $ctp.$ctpChildID IS NULL ORDER BY $plan.$planName, $plan.$planDescriptiveName";
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array()),
             'Plan');
@@ -2716,31 +2721,22 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $plloID = self::TABLE_PLLO_ID;
         $plloNumber = self::TABLE_PLLO_NUMBER;
         
-        $department = self::TABLE_DEPARTMENT;
-        $departmentID = self::TABLE_DEPARTMENT_ID;
-        $departmentName = self::TABLE_DEPARTMENT_NAME;        
-                
-        $das = self::TABLE_DEPARTMENT_AND_SUBJECT;
-        $dasDepartmentID = self::TABLE_DEPARTMENT_AND_SUBJECT_DEPARTMENT_ID;
-        $dasSubject = self::TABLE_DEPARTMENT_AND_SUBJECT_SUBJECT;
+        $dap = self::TABLE_DEPARTMENT_AND_PLAN;
+        $dapDepartmentID = self::TABLE_DEPARTMENT_AND_PLAN_DEPARTMENT_ID;
+        $dapPlanID = self::TABLE_DEPARTMENT_AND_PLAN_PLAN_ID;
         
-        $course = self::TABLE_COURSE;
-        $courseID = self::TABLE_COURSE_ID;
-        $courseSubject = self::TABLE_COURSE_SUBJECT;
+        $plan = self::TABLE_PLAN;
+        $planID = self::TABLE_PLAN_ID;
         
-        $cac = self::TABLE_CLLO_AND_COURSE;
-        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_CLLO_ID;
-        $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
-        
-        $cap = self::TABLE_CLLO_AND_PLLO;
-        $capPLLOID = self::TABLE_CLLO_AND_PLLO_PLLO_ID;
-        $capCLLOID = self::TABLE_CLLO_AND_PLLO_CLLO_ID;
-               
+        $pap = self::TABLE_PLAN_AND_PLLO;
+        $papPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
+        $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
+                               
         $pad = self::TABLE_PLLO_AND_DLE;
         $padDLEID = self::TABLE_PLLO_AND_DLE_DLE_ID;
         $padPLLOID = self::TABLE_PLLO_AND_DLE_PLLO_ID;
                 
-        $query = "SELECT $pllo.* FROM (SELECT DISTINCT $pllo.* FROM (SELECT * FROM $department WHERE $department.$departmentID = ?) AS $department JOIN department_and_subject ON $department.$departmentID = $das.$dasDepartmentID JOIN $course ON $das.$dasSubject = $course.$courseSubject JOIN $cac ON $course.$courseID = $cac.$cacCourseID JOIN $cap ON $cac.$cacCLLOID = $cap.$capCLLOID JOIN $pllo ON $cap.$capPLLOID = $pllo.$plloID) AS $pllo JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON $pllo.$plloID = $pad.$padPLLOID ORDER BY $pllo.$plloNumber ASC";
+        $query = "SELECT DISTINCT $pllo.* FROM (SELECT * FROM $dap WHERE $dap.$dapDepartmentID = ?) AS $dap JOIN $plan ON $dap.$dapPlanID = $plan.$planID JOIN $pap ON $plan.$planID = $pap.$papPlanID JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON $pap.$papPLLOID = $pad.$padPLLOID JOIN $pllo on $pad.$padPLLOID = $pllo.$plloID ORDER BY $pllo.$plloNumber ASC";
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($departmentIDValue, $dleIDValue)),
             'PlanLevelLearningOutcome');
@@ -2773,10 +2769,39 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $padDLEID = self::TABLE_PLLO_AND_DLE_DLE_ID;
         $padPLLOID = self::TABLE_PLLO_AND_DLE_PLLO_ID;
               
-        $query = "SELECT DISTINCT $pllo.* FROM (SELECT * FROM course WHERE $course.$courseSubject = ?) AS $course JOIN $cac ON $course.$courseID = $cac.$cacCourseID JOIN $cap ON $cac.$cacCLLOID = $cap.$capCLLOID JOIN $pllo ON $cap.$capPLLOID = $pllo.$plloID JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON $pllo.$plloID = $pad.$padPLLOID ORDER BY $pllo.$plloNumber ASC";
-        return $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($subjectValue, $dleIDValue)),
+        // Get all the PLLO IDs for courses with this subject
+        $query = "SELECT DISTINCT $pllo.* FROM (SELECT * FROM $course WHERE $course.$courseSubject = ?) AS $course JOIN $cac ON $course.$courseID = $cac.$cacCourseID JOIN $cap ON $cac.$cacCLLOID = $cap.$capCLLOID JOIN $pllo ON $cap.$capPLLOID = $pllo.$plloID ORDER BY $pllo.$plloNumber ASC";
+        $possible_pllo_array = $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($subjectValue)),
             'PlanLevelLearningOutcome');
+        
+        // Go through each PLLO
+        $confirmed_pllo_array = array();
+        $confirmed_pllo_id_array = array();
+        while (! empty($possible_pllo_array)) {
+            $possible_pllo = array_pop($possible_pllo_array);
+            
+            // Check if this PLLO is directly linked to the DLE
+            $query = "SELECT 1 FROM $pad WHERE $pad.$padPLLOID = ? AND $pad.$padDLEID = ?";
+            $result = $this->getQueryResult($query, array(
+                $possible_pllo->getDBID(), $dleIDValue));
+            
+            if ($result) {
+                // Was there a match? If so, keep this PLLO.
+                $confirmed_pllo_array[] = $possible_pllo;
+                $confirmed_pllo_id_array[] = $possible_pllo->getDBID();
+            }
+            elseif ($possible_pllo->hasParent() && 
+                    (! in_array($possible_pllo->getParentDBID(), $confirmed_pllo_id_array))) {
+                // If this PLLO has a parent, check the parent *if* it hasn't 
+                // already been found
+                $possible_pllo_array[] = $this->getPLLOFromID($possible_pllo->getParentDBID());
+            }
+        }
+        
+        // Now it's just a matter of sorting the results and returning them
+        usort($confirmed_pllo_array, PLLO::getSortFunction());
+        return $confirmed_pllo_array;
     }    
     
 
@@ -3708,7 +3733,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $this->insertRevision($revision);
         
         // Get the plan(s) associated with the PLLO
-        $planIDArray = qsc_core_extract_array_form_value(INPUT_POST, QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED, FILTER_SANITIZE_NUMBER_INT);
+        $planIDArray = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED, FILTER_SANITIZE_NUMBER_INT);
 
         // Go through each plan ID
         foreach ($planIDArray as $planID) {
@@ -4190,7 +4215,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
                 array(self::TABLE_CLLO_AND_ILO_CLLO_ID =>
                     $addedCLLOAndILO->getCLLODBID(),
                     self::TABLE_CLLO_AND_ILO_ILO_ID =>
-                    $addedCLLOAndILO->getICMDBID()),
+                    $addedCLLOAndILO->getILODBID()),
                 self::TABLE_REVISION_ACTION_ADDED,
                 null, $dateAndTime
             );
@@ -4375,6 +4400,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         foreach ($updatedPlanIDArray as $updatedPlanID) {
              $updatedPlanAndPLLOArray[] = new PlanAndPLLO($updatedPlanID, $originalPLLO->getDBID());
         }
+        
 
         // Get the original PLLO and Plan information in the database
         $originalPlanAndPLLOArray = $this->getPlansAndPLLOsForPLLO($originalPLLO->getDBID());

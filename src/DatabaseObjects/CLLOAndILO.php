@@ -79,7 +79,7 @@ class CLLOAndILO extends BiRelationship {
      *
      * @return      The string ID
      */ 
-    public function getICMDBID() {
+    public function getILODBID() {
         return $this->secondDBID;   
     } 
 

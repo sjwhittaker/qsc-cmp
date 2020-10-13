@@ -128,7 +128,7 @@ else:
 
         <?php if (! empty($child_pllo_array)) : ?>    
 <h2>Child PLLOs</h2>
-        <?php qsc_cmp_display_pllo_table($child_pllo_array, $db_curriculum); ?>
+        <?php qsc_cmp_display_pllo_table($child_pllo_array, $db_curriculum, true, false); ?>
         <?php endif; ?>
 
 <h2>Course Level Learning Outcomes</h2>
@@ -136,7 +136,7 @@ else:
 <p>There are no CLLOs set for this PLLO.</p>
         <?php
         else :
-            qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, true, false, false);
+            qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, true, false, true);
         endif; ?>
 
 <h2>Institution Learning Outcomes</h2>

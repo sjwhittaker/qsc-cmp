@@ -186,6 +186,9 @@ function qsc_cmp_extract_form_option_data($db_object_array) {
         if (method_exists($db_object, "getShortSnippet")) {
             $text = $db_object->getShortSnippet();
         }
+        elseif (method_exists($db_object, "getDescriptiveName")) {
+            $text = $db_object->getDescriptiveName();
+        }
         elseif (method_exists($db_object, "getName")) {
             $text = $db_object->getName();
         }

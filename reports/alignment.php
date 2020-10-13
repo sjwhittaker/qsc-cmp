@@ -84,7 +84,8 @@ $dles_array = $db_curriculum->getAllDLEs();
         $pllo_array = ($department) ?
             $db_curriculum->getPLLOsForDLEAndDepartment($dle->getDBID(), $department_id) :
             $db_curriculum->getPLLOsForDLEAndSubject($dle->getDBID(), $subject);            
-        if (! empty($pllo_array)) :
+
+            // Go through each of the DLE's child PLLOs
             foreach ($pllo_array as $pllo) :  
                 $cllo_array = ($department) ?
                     $db_curriculum->getDirectCLLOsForPLLO($pllo->getDBID()) :
@@ -95,11 +96,27 @@ $dles_array = $db_curriculum->getAllDLEs();
                     <h3><?= $pllo->getAnchorToView(); ?></h3>            
                     <p class="pllo-text"><?= $pllo->getText(); ?></p>
                 </div>
-                <?php qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, true); ?>
+                <?php qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, true, false, true); ?>
             </div> <!-- .child-pllo -->            
             <?php
+            
+                // Now check for and go through each of the PLLO's child PLLOs
+                // TO DO: make this recursive
+                $grandchild_pllo_array = $db_curriculum->getChildPLLOs($pllo->getDBID());
+                foreach ($grandchild_pllo_array as $grandchild_pllo) :
+                    $cllo_array = ($department) ?
+                        $db_curriculum->getDirectCLLOsForPLLO($grandchild_pllo->getDBID()) :
+                        $db_curriculum->getDirectCLLOsForPLLOAndSubject($grandchild_pllo->getDBID(), $subject);
+                    ?>                
+            <div class="grandchild-pllo">            
+                <div class="grandchild-pllo-header">           
+                    <h4><?= $grandchild_pllo->getAnchorToView(); ?></h4>            
+                    <p class="pllo-text"><?= $grandchild_pllo->getText(); ?></p>
+                </div>
+                    <?php qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, true, false, true); ?>
+            </div> <!-- .grandchild-pllo -->            
+                <?php endforeach;
             endforeach;
-        endif;
     endforeach; ?>
     </div> <!-- #alignment-report -->
 <?php 

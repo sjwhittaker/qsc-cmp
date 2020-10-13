@@ -649,7 +649,7 @@ function qsc_cmp_display_plan_table($plan_array, $db_curriculum = null, $departm
  * @param type $pllo_array
  * @param type $db_curriculum
  */
-function qsc_cmp_display_pllo_table($pllo_array, $db_curriculum, $display_children = true) {
+function qsc_cmp_display_pllo_table($pllo_array, $db_curriculum, $display_children = true, $indent_children = true) {
     if (empty($pllo_array)) {
         return;
     }
@@ -671,7 +671,7 @@ function qsc_cmp_display_pllo_table($pllo_array, $db_curriculum, $display_childr
         <tbody>
             <?php
             foreach ($pllo_array as $pllo) {
-                $indent = $db_curriculum->getPLLODepth($pllo->getDBID()) - 1;
+                $indent = $indent_children ? $db_curriculum->getPLLODepth($pllo->getDBID()) - 1 : 0;
                 qsc_cmp_display_pllo_row($pllo, $db_curriculum, $max_height, $display_children, $indent);
             }
             ?>
@@ -844,7 +844,7 @@ function qsc_cmp_display_ilo_table($ilo_array) {
 function qsc_cmp_display_cllo_table($cllo_array, $db_curriculum = null, $db_calendar = null, $displayCourse = false, $displayPLLOs = false, $indentChildren = false) {
     if (empty($cllo_array)) {
         return;
-    }
+    }    
 ?>
     <table>
         <thead>
@@ -863,11 +863,14 @@ function qsc_cmp_display_cllo_table($cllo_array, $db_curriculum = null, $db_cale
         $cllo_pllo_array = ($displayPLLOs) ? $db_curriculum->getDirectPLLOsForCLLOs(array($cllo->getDBID())) : null;
         $cllo_pllo_last_index = ($displayPLLOs) ? count($cllo_pllo_array) - 1 : 0;
         
-        $tr_tag = ($indentChildren && $cllo->hasParent()) ? 'tr class="indent"' : 'tr';
+        $indent_this_row = $indentChildren && $cllo->hasParent();
+        $number_class = ($indent_this_row) ? ' class="child-cllo"' : '';
         ?>
-            <<?= $tr_tag; ?>>
-        <?php if ($displayCourse) : ?><td><?= $course->getAnchorToView($db_calendar); ?></td><?php endif; ?>
-                <td><?= $cllo->getAnchorToView(); ?></td>                
+            <tr>
+        <?php if ($displayCourse) : ?>
+                <td><?= $course->getAnchorToView($db_calendar); ?></td>
+        <?php endif; ?>
+                <td<?= $number_class ?>><?= $cllo->getAnchorToView(); ?></td>             
                 <td><?= $cllo->getType(); ?></td>
         <?php if($displayPLLOs) : ?>
                 <td>

@@ -28,7 +28,8 @@
         display: block;
     }
     
-    .child-pllo-header {
+    .child-pllo-header,
+    .grandchild-pllo-header {
         page-break-inside: avoid;        
     }
 
@@ -61,7 +62,8 @@
     }
         
     h5, input[type=button], h6, header,
-    #alignment-report .child-pllo .pllo-text {
+    #alignment-report .child-pllo .pllo-text,
+    #alignment-report .grandchild-pllo .pllo-text {
         font-size: 14px;
     }
     
@@ -99,7 +101,12 @@
     }    
     
     #alignment-report .child-pllo {
-        padding-left: 1.5rem;
-        padding-right: 0;
+        padding: 0;
+        margin-left: 16px 0 16px 16px;
     }
+    
+    #alignment-report .grandchild-pllo {
+        padding: 0;
+        margin-left: 16px 0 16px 32px;
+    }    
 }

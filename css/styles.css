@@ -107,6 +107,7 @@ header a:hover,
 }
 
 #alignment-report .child-pllo,
+#alignment-report .grandchild-pllo,
 .search-results-inner {
     background-color: #f2f2f2;
     box-shadow: 1px 1px 1px 0 #ddd;
@@ -246,6 +247,10 @@ td.indent {
     border-bottom: 0px solid transparent;
 }
 
+td.child-cllo {
+    padding-left: 2.5em;
+}
+
 ul, ol, li {
     padding-top: 0.25em;
     padding-bottom: 0.25em;
@@ -356,17 +361,24 @@ footer, #credits {
 /********************/
 /* Alignment Report */
 /********************/
-#alignment-report .child-pllo {
-    padding: 1em 1em 1em calc(30px + 1em);
-    margin: 1em 0;
+#alignment-report .child-pllo,
+#alignment-report .grandchild-pllo {
+    padding: 1rem;
+    margin: 1rem 0 1rem 2rem;
 }
 
-#alignment-report .child-pllo h3 {
+#alignment-report .child-pllo h3,
+#alignment-report .grandchild-pllo h4 {
     margin-top: 0;
 }
 
-#alignment-report .child-pllo .pllo-text {
+#alignment-report .child-pllo .pllo-text,
+#alignment-report .grandchild-pllo .pllo-text {
     font-weight: bold;
+}
+
+#alignment-report .grandchild-pllo {
+    margin-left: 4rem;
 }
 
 

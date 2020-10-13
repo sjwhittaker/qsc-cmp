@@ -176,7 +176,7 @@ $(document).ready(function() {
     // Handle form submission for add and edit
     $(QSC_CMP_FORM_PLLO_ADD + ", " + QSC_CMP_FORM_PLLO_EDIT).submit(function(event) {            
         // At least one plan must be selected
-        let plansSelected = $(QSC_CMP_FORM_PLLO_PLAN_LIST_POSSIBLE + ' option').length;        
+        let plansSelected = $(QSC_CMP_FORM_PLLO_PLAN_LIST_SUPPORTED + ' option').length; 
         if (plansSelected === 0) {
             // To Do: figure out an accessible way to communicate the problem
             event.preventDefault();
