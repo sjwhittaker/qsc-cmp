@@ -73,7 +73,7 @@ function qsc_cmp_display_pllo_form($form_action, $form_id, $form_type, $submit_b
         
         // Is there parent PLLO? If so, get it
         if ($pllo->hasParent()) {
-            $parent_pllo = $db_curriculum->getCLLOFromID($pllo->getParentDBID());
+            $parent_pllo = $db_curriculum->getPLLOFromID($pllo->getParentDBID());
             $parent_pllo_id = $parent_pllo->getDBID();
         } else {
             // Is there a parent DLE? If so, get it's information
