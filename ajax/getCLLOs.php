@@ -56,18 +56,23 @@ if ($ajax_action == QSC_CMP_AJAX_ACTION_SEARCH_CLLOS) {
     $cllos_array = $db_curriculum->findMatchingCLLOs($query_value);
     
     foreach ($cllos_array as $cllo) {
-        $course = $db_curriculum->getCourseForCLLO($cllo->getDBID());
+        $course_and_level_array = $db_curriculum->getCoursesAndCLLOLevelsForCLLO($cllo->getDBID());
         
-        $output_array[] = array(QSC_CMP_AJAX_OUTPUT_ID => $cllo->getDBID(),
-            QSC_CMP_AJAX_OUTPUT_NAME => $cllo->getName()." for ".$course->getName().": ".qsc_core_get_snippet($cllo->getText(), QSC_CORE_STRING_SNIPPET_LENGTH_SHORT),
-            QSC_CMP_AJAX_OUTPUT_LINK => $cllo->getLinkToView());
+        foreach ($course_and_level_array as $courseAndCLLOLevel) {
+            $course = $courseAndCLLOLevel->getCourse();
+            $level = $courseAndCLLOLevel->getCLLOLevel();
+            
+            $output_array[] = array(QSC_CMP_AJAX_OUTPUT_ID => $cllo->getDBID(),
+                QSC_CMP_AJAX_OUTPUT_NAME => $cllo->getName()." for ".$course->getName()." (".$level->getName()."): ".qsc_core_get_snippet($cllo->getText(), QSC_CORE_STRING_SNIPPET_LENGTH_SHORT),
+                QSC_CMP_AJAX_OUTPUT_LINK => $cllo->getLinkToView());
+        }
     }    
 }
 else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_CLLO_FROM_ID) {
     // Extract the CLLO ID from the input
     $query_value = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_AJAX_INPUT_ID, FILTER_SANITIZE_NUMBER_INT);
     if (! $query_value) {
-        error_log("Couldn't determine the CSLO's ID in getCLLOs.php");
+        error_log("Couldn't determine the CLLO's ID in getCLLOs.php");
         echo "";
         exit;        
     }
@@ -92,8 +97,6 @@ else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_CLLOS_FOR_COURSE) {
 // and names of the CLLOs
 if (empty($output_array)) {
     foreach ($cllos_array as $cllo) {
-        $course = $db_curriculum->getCourseForCLLO($cllo->getDBID());
-        
         $output_array[] = array(QSC_CMP_AJAX_OUTPUT_ID => $cllo->getDBID(),
             QSC_CMP_AJAX_OUTPUT_NAME => $cllo->getShortSnippet(),
             QSC_CMP_AJAX_OUTPUT_LINK => $cllo->getLinkToView());

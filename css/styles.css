@@ -29,7 +29,8 @@
 /* Purple: #622e88 */
 /* Blue: #11335d */
 /******************************************************************************/
-#content a {
+#content a,
+#course-pllo-matrix .level-acronym {
     color: var(--navy);
 }
 
@@ -132,10 +133,11 @@ body {
 h1, h2, h3, h4, h5, h6, th, thead td, label, 
 input[type=button], input[type=submit], 
 .property-columns .property, 
-.tooltip-container .tooltip-popup .tooltip-popup-title,
 #content .link-button,
 .sub-plan-requirements .plan-title,
-.sub-plan-requirements-header {
+.sub-plan-requirements-header,
+#course-pllo-matrix .level-acronym,
+.course-cllo-level-pllo caption {
     font-family: var(--font-family-sans-serif);
     font-weight: 500;
 }
@@ -160,13 +162,14 @@ h4 {
     font-size: 1.375rem;
 }
 
-h5, .add-and-remove-buttons input[type=button]  {
+h5, .add-and-remove-buttons input[type=button],
+.course-cllo-level-pllo caption {
     font-size: 1.25rem;
 }
 
 h6, header, #alignment-report .child-pllo .pllo-text,
-.tooltip-container .tooltip-popup .tooltip-popup-title,
-#course-pllo-matrix .support-row td i {
+#course-pllo-matrix .support-row td i,
+#course-pllo-matrix .level-acronym {
     font-size: 1.125rem;
 }
 
@@ -337,6 +340,19 @@ footer, #credits {
     max-width: var(--breakpoint-sm);
 }
 
+.form-row > .col.join, .form-row > [class*="col-"].join {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.form-row > .col.join:first-child, .form-row > [class*="col-"].join:first-child {
+    padding-left: 5px;
+}
+
+.form-row > .col.join:last-child, .form-row > [class*="col-"].join:last-child {
+    padding-right: 5px;
+}
+
 
 /***********************/
 /* Information Columns */
@@ -355,6 +371,10 @@ footer, #credits {
 
 .property-columns + p {
     margin-top: 2rem;
+}
+
+.property-columns ul {
+    padding-left: 15px;
 }
 
 
@@ -404,6 +424,24 @@ footer, #credits {
     padding: 1em;
 }
 
+#course-pllo-matrix .level-acronym {
+    font-weight: bold;
+}
+
+
+/*********************************/
+/* Course-CLLO-Level-PLLOs Table */
+/*********************************/
+table.course-cllo-level-pllo caption {
+    caption-side: top;
+    text-align: center;    
+    font-weight: bold;
+}
+
+#course-pllo-matrix .course-cllo-level-pllo th {
+    text-align: left;    
+}
+
 
 /********************/
 /* Tooltips         */
@@ -433,14 +471,6 @@ footer, #credits {
 .tooltip-container:hover .tooltip-popup {
     visibility: visible;
     opacity: 1;
-}
-
-.tooltip-container .tooltip-popup ul {
-    padding-left: 1em;
-}
-
-.tooltip-container .tooltip-popup .tooltip-popup-title {
-    font-weight: bold;
 }
 
 

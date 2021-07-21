@@ -252,15 +252,22 @@ function qsc_cmp_display_cllo_form($form_action, $form_id, $form_type, $submit_b
     $cllo_type = null;
     $cllo_ioa = null;
     $cllo_notes = null;    
-    $course_id = null;
-    $course_name = null;
-    $course_CLLO_array = array();
+    
+    $course_and_level_ids_array = array();
+    $course_array = array();
+    $level_array = array();
+    
     $parent_cllo_id = null;
     $pllo_possible_array = array();
     $pllo_chosen_array = array();
     $ilo_possible_array = array();
     $ilo_chosen_array = array();    
     $hidden_controls = array();
+
+    // TBD: get the info from the DB
+    $course_and_level_array = array();
+    $cllo_level_array = $db_curriculum->getAllCLLOLevels();
+
     
     if ($cllo) {
         // Get the basics from the CLLO
@@ -273,14 +280,11 @@ function qsc_cmp_display_cllo_form($form_action, $form_id, $form_type, $submit_b
         
         $hidden_controls[QSC_CMP_FORM_CLLO_ID] = $cllo_id;
         
-        // Get the course associated with the CLLO
-        $course = $db_curriculum->getCourseForCLLO($cllo_id);
-        $course_id = $course->getDBID();
-        $course_name = $course->getName();
-
-        // Get the CLLOs associated with the course
-        $course_CLLO_array = $db_curriculum->getCLLOsForCourse($course->getDBID(), array($cllo_id));
-
+        // Get the courses and levels associated with the CLLO
+        $course_and_level_array = $db_curriculum->getCoursesAndCLLOLevelsForCLLO($cllo_id);
+        $course_array = qsc_core_map_member_function($course_and_level_array, 'getCourse'); 
+        $level_array = qsc_core_map_member_function($course_and_level_array, 'getCLLOLevel'); 
+        
         // Is there parent CLLO? If so, get it
         if ($cllo->hasParent()) {
             $parent_cllo = $db_curriculum->getCLLOFromID($cllo->getParentDBID());
@@ -297,28 +301,91 @@ function qsc_cmp_display_cllo_form($form_action, $form_id, $form_type, $submit_b
             qsc_core_get_db_id_array($ilo_chosen_array));        
     }
     else {
-        $pllo_possible_array = $db_curriculum->getAllPLLOs();                
         $ilo_possible_array = $db_curriculum->getAllILOs();                
     }
     ?>
 <form action="<?= $form_action; ?>" method="POST" id="<?= $form_id; ?>">
+    <div class="form-section">        
+        <?php qsc_core_form_display_label(QSC_CMP_FORM_CLLO_COURSE_INPUT, "Courses and Levels"); ?> 
+        <div class="form-row input-and-select-transfer-input">
+            <div class="col-lg">
+                <input type="text" class="form-control" id="<?= QSC_CMP_FORM_CLLO_COURSE_INPUT ?>" name="<?= QSC_CMP_FORM_CLLO_COURSE_INPUT ?>" aria-describedby="<?= QSC_CMP_FORM_CLLO_COURSE_INPUT_HELP ?>"/>            
+                <?php qsc_core_form_display_help_text(QSC_CMP_FORM_CLLO_COURSE_INPUT_HELP, 
+                        "Type the course code <strong>or</strong> number here to find courses."); ?>
+            </div>
+        </div>
+        <div class="form-row input-and-select-transfer-select">               
+            <div class="col-md-5">
+                <div class="form-row">
+                    <div class="col-6 join">                   
+                        <select class="form-control" id="<?= QSC_CMP_FORM_CLLO_COURSE_LIST_POSSIBLE; ?>" name="<?= QSC_CMP_FORM_CLLO_COURSE_LIST_POSSIBLE; ?>" size="6" aria-describedby="<?= QSC_CMP_FORM_CLLO_COURSE_LIST_POSSIBLE_HELP; ?>">
+                        </select>
+                        <?php qsc_core_form_display_help_text(QSC_CMP_FORM_CLLO_COURSE_LIST_POSSIBLE_HELP, 
+                                "Select the matching course in this list."); ?>
+                    </div>
+                    <div class="col-6 join">                   
+                        <select class="form-control" id="<?= QSC_CMP_FORM_CLLO_LEVEL_LIST_POSSIBLE ?>" name="<?= QSC_CMP_FORM_CLLO_LEVEL_LIST_POSSIBLE ?>" size="6" aria-describedby="<?= QSC_CMP_FORM_CLLO_LEVEL_LIST_POSSIBLE_HELP; ?>">
+                        <?php $first_level_selected = false;
+                        foreach ($cllo_level_array as $cllo_level) : ?>
+                            <option value="<?= $cllo_level->getDBID(); ?>"<?php if (! $first_level_selected) { echo " selected"; $first_level_selected = true; } ?>><?= $cllo_level->getName(); ?></option>
+                        <?php endforeach; ?>
+                        </select>
+                        <?php qsc_core_form_display_help_text(QSC_CMP_FORM_CLLO_LEVEL_LIST_POSSIBLE_HELP, 
+                            "Select the level for the course in this list"); ?>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-auto transfer-button-column">
+                <input type="button" id="<?= QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_ADD; ?>" name="<?= QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_ADD; ?>" value="&raquo;">
+                <br/>
+                <input type="button" id="<?= QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_REMOVE; ?>" name="<?= QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_REMOVE; ?>" value="&laquo;">
+            </div>
+            <div class="col-md-5">
+                <div class="form-row">
+                    <div class="col-6 join">                   
+                        <select class="form-control" id="<?= QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED; ?>" name="<?= QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED; ?>[]" size="6" aria-describedby="<?= QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_LIST_SELECTED_HELP; ?>" multiple>
+        <?php foreach ($course_array as $course) : ?>
+                            <option value="<?= $course->getDBID() ?>"><?= $course->getName() ?></option>
+        <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-6 join">                   
+                        <select class="form-control" id="<?= QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED ?>" name="<?= QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED ?>[]" size="6" aria-describedby="<?= QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_LIST_SELECTED_HELP; ?>" multiple>
+        <?php foreach ($level_array as $level) : ?>
+                            <option value="<?= $level->getDBID() ?>"><?= $level->getName() ?></option>
+        <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <?php qsc_core_form_display_help_text(QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_LIST_SELECTED_HELP, 
+                            "the selected course/level pairs appear in this list", true); ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="form-section">
-        <?php qsc_core_form_display_input_and_select_group(
-            "Course",
-            QSC_CMP_FORM_CLLO_COURSE_INPUT, 
-            QSC_CMP_FORM_CLLO_COURSE_SELECT, 
-            array(
-                QSC_CORE_FORM_INPUT_HELP_ID => QSC_CMP_FORM_CLLO_COURSE_INPUT_HELP,
-                QSC_CORE_FORM_INPUT_HELP_TEXT => "Type the course code <strong>or</strong> number here to filter the options in the list.",
-                QSC_CORE_FORM_SELECT_HELP_ID => QSC_CMP_FORM_CLLO_COURSE_SELECT_HELP,
-                QSC_CORE_FORM_SELECT_HELP_TEXT => "select the matching course in this list.",
-                QSC_CORE_FORM_SELECT_SELECTED_VALUE => $course_id,
-                QSC_CORE_FORM_SELECT_SELECTED_TEXT => $course_name,
-                QSC_CORE_FORM_SIDE_BY_SIDE => true,
-                QSC_CORE_FORM_REQUIRED => true
-            )
-        );
-        ?>               
+        <?php qsc_core_form_display_label(QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST, "Parent CLLO"); ?> 
+        <div class="form-row">               
+            <div class="col-md-3">                   
+                <select class="form-control" id="<?= QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST; ?>" name="<?= QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST; ?>" size="6" aria-describedby="<?= QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST_HELP; ?>">
+        <?php foreach ($course_array as $course) : ?>
+                    <option value="<?= $course->getDBID() ?>"><?= $course->getName() ?></option>
+        <?php endforeach; ?>
+                </select>
+                <?php qsc_core_form_display_help_text(QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST_HELP, 
+                    "Select the course with the parent CLLO from this list (if any)."); ?>
+            </div>
+            <div class="col-md-7">                   
+                <select class="form-control" id="<?= QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST ?>" name="<?= QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST ?>" size="6" aria-describedby="<?= QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST_HELP; ?>">
+                </select>
+                <?php qsc_core_form_display_help_text(QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST_HELP, 
+                    "Select the parent CLLO from this list (if any); it is automatically updated with the CLLOs from the selected course."); ?>
+            </div>
+            <div class="col-md-2">
+                <input type="button" id="<?= QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_UNSELECT; ?>" name="<?= QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_UNSELECT; ?>" value="Unselect"/>              
+            </div>
+        </div>        
     </div>
     <div class="form-section">
         <?php qsc_core_form_display_input_text(
@@ -330,21 +397,6 @@ function qsc_cmp_display_cllo_form($form_action, $form_id, $form_type, $submit_b
                 QSC_CORE_FORM_INPUT_MAX_LENGTH => QSC_CMP_FORM_CLLO_NUMBER_MAX_LENGTH,
                 QSC_CORE_FORM_INPUT_VALUE => $cllo_number,
                 QSC_CORE_FORM_REQUIRED => true
-            )
-        );
-        ?>               
-    </div>
-    <div class="form-section">
-        <?php qsc_core_form_display_select(
-            "Parent CLLO",
-            QSC_CMP_FORM_CLLO_PARENT_SELECT, 
-            array(
-                QSC_CORE_FORM_SELECT_HELP_ID => QSC_CMP_FORM_CLLO_PARENT_SELECT_HELP,
-                QSC_CORE_FORM_SELECT_HELP_TEXT => "Select the parent CLLO from this list (if any); it is automatically updated with the CLLOs from the selected course.",
-                QSC_CORE_FORM_SELECT_UNSELECT_ID => QSC_CMP_FORM_CLLO_PARENT_UNSELECT,
-                QSC_CORE_FORM_SELECT_OPTIONS => qsc_cmp_extract_form_option_data($course_CLLO_array),
-                QSC_CORE_FORM_SELECT_SELECTED_VALUE => $parent_cllo_id,
-                QSC_CORE_FORM_SELECT_SIZE => 5
             )
         );
         ?>               
@@ -399,7 +451,7 @@ function qsc_cmp_display_cllo_form($form_action, $form_id, $form_type, $submit_b
                 QSC_CORE_FORM_TRANSFER_POSSIBLE_OPTIONS => qsc_cmp_extract_form_option_data($pllo_possible_array),
                 QSC_CORE_FORM_TRANSFER_CHOSEN_OPTIONS => qsc_cmp_extract_form_option_data($pllo_chosen_array),
                 QSC_CORE_FORM_SELECT_HELP_ID => QSC_CMP_FORM_CLLO_PLLO_HELP,
-                QSC_CORE_FORM_SELECT_HELP_TEXT => "<strong>Note:</strong> the list of possible PLLOs is populated from the selected course's departments' administered plans."
+                QSC_CORE_FORM_SELECT_HELP_TEXT => "<strong>Note:</strong> the list of possible PLLOs is populated from the selected courses' departments' administered plans."
             )
         );
         ?>                             

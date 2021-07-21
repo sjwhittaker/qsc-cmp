@@ -25,10 +25,12 @@ namespace Managers;
  * <https://www.queensu.ca/provost/teaching-and-learning>.
  ***************************************************************************/
 
-use DatabaseObjects\CLLOAndCourse;
+use DatabaseObjects\CLLOAndCourseAndLevel;
 use DatabaseObjects\CLLOAndILO;
 use DatabaseObjects\CLLOAndPLLO;
+use DatabaseObjects\CLLOLevel;
 use DatabaseObjects\Course;
+use DatabaseObjects\CourseAndCLLOLevel;
 use DatabaseObjects\CourseEntry;
 use DatabaseObjects\CourseList;
 use DatabaseObjects\CourseLevelLearningOutcome as CLLO;
@@ -85,13 +87,20 @@ class CurriculumMappingDatabase extends DatabaseManager {
     public const TABLE_CLLO_AND_ILO_CLLO_ID = "cllo_id";
     public const TABLE_CLLO_AND_ILO_ILO_ID = "ilo_id";
 
-    public const TABLE_CLLO_AND_COURSE = "cllo_and_course";
-    public const TABLE_CLLO_AND_COURSE_CLLO_ID = "cllo_id";
-    public const TABLE_CLLO_AND_COURSE_COURSE_ID = "course_id";
+    public const TABLE_CLLO_AND_COURSE_AND_LEVEL = "cllo_and_course_and_level";
+    public const TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID = "cllo_id";
+    public const TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID = "course_id";
+    public const TABLE_CLLO_AND_COURSE_AND_LEVEL_LEVEL_ID = "cllolevel_id";
 
     public const TABLE_CLLO_AND_PLLO = "cllo_and_pllo";
     public const TABLE_CLLO_AND_PLLO_CLLO_ID = "cllo_id";
     public const TABLE_CLLO_AND_PLLO_PLLO_ID = "pllo_id";
+    
+    public const TABLE_CLLOLEVEL = "cllolevel";
+    public const TABLE_CLLOLEVEL_ID = "id";
+    public const TABLE_CLLOLEVEL_NAME = "name";
+    public const TABLE_CLLOLEVEL_ACRONYM = "acronym";
+    public const TABLE_CLLOLEVEL_RANK = "rank";
 
     public const TABLE_COURSE = "course";
     public const TABLE_COURSE_ID = "id";
@@ -2063,6 +2072,18 @@ class CurriculumMappingDatabase extends DatabaseManager {
     }         
     
     /**
+     * Queries the database for the single course with the given ID.
+     *
+     * @param $idValue   The course's ID (string or numeric)
+     * @return     
+     */
+    public function getCLLOLevelFromID($idValue) {
+        return $this->createObjectFromDatabaseRow(
+            $this->getRowFromID(self::TABLE_CLLOLEVEL, self::TABLE_CLLOLEVEL_ID, $idValue),
+            'CLLOLevel');
+    }    
+    
+    /**
      * 
      * @param type $subjectValue
      * @return type
@@ -2269,6 +2290,49 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * Get Courses/CLLOs/DLEs/ILOs from Courses/CLLOs/DLEs/ILOs
      **************************************************************************/
     /**
+     * Extracts all of the CLLO levels ordered by rank.
+     *
+     * @return     
+     */
+    public function getAllCLLOLevels() {
+        return $this->createObjectsFromDatabaseRows(
+            $this->getAllRows(self::TABLE_CLLOLEVEL, 
+                self::TABLE_CLLOLEVEL_ID, self::TABLE_CLLOLEVEL.".".self::TABLE_CLLOLEVEL_RANK, 
+                array(), array(), "ASC"),
+            'CLLOLevel');        
+    }
+    
+    /**
+     * Extracts the courses and levels associated with a particular CLLO.
+     *
+     * @param $idValue      The id of the CLLO (string or numeric)
+     * @return              A Course object
+     */
+    public function getMaximumCLLOLevelForCourseAndCLLOs($courseIDValue, $clloIDValues) {
+        $cl = self::TABLE_CLLOLEVEL;
+        $clID = self::TABLE_CLLOLEVEL_ID;
+        $clAcronym = self::TABLE_CLLOLEVEL_ACRONYM;
+        $clName = self::TABLE_CLLOLEVEL_NAME;
+        $clRank = self::TABLE_CLLOLEVEL_RANK;
+        
+        $cac = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $cacCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
+        $cacLevelID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_LEVEL_ID;
+        
+        $clloIDQuestionMarkString = self::getQuestionMarkString($clloIDValues);
+        $idValues = $clloIDValues;
+        array_unshift($idValues, $courseIDValue);
+               
+        // Perform the query and get the rows with the IDs
+        $query = "SELECT $cl.* FROM $cl WHERE $cl.$clRank IN (SELECT MAX($cl.$clRank) FROM $cac JOIN $cl ON $cac.$cacLevelID = $cl.$clID WHERE $cac.$cacCourseID = ? AND $cac.$cacCLLOID IN $clloIDQuestionMarkString)";
+        $result = $this->getQueryResult($query, $idValues);
+
+        return (empty($result)) ? null : CLLOLevel::buildFromDBRow($result); 
+    }    
+    
+        
+    /**
      * Extracts the CLLOs associated with a particular course.
      *
      * @param $idValue          The id of the course (string or numeric)
@@ -2280,9 +2344,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $clloID = self::TABLE_CLLO_ID;
         $clloNumber = self::TABLE_CLLO_NUMBER;
 
-        $cac = self::TABLE_CLLO_AND_COURSE;
-        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_CLLO_ID;
-        $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
+        $cac = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $cacCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
         
         $excludeIDQuestionMarkString = self::getQuestionMarkString($excludeIDArray);
         $queryIDArray = $excludeIDArray;
@@ -2302,27 +2366,81 @@ class CurriculumMappingDatabase extends DatabaseManager {
     }
 
     /**
-     * Extracts the course associated with a particular CLLO.
+     * Extracts the courses and levels associated with a particular CLLO.
      *
      * @param $idValue      The id of the CLLO (string or numeric)
      * @return              A Course object
      */
-    public function getCourseForCLLO($idValue) {
+    public function getCoursesAndCLLOLevelsForCLLO($idValue) {
         $course = self::TABLE_COURSE;
         $courseID = self::TABLE_COURSE_ID;
-        $courseSubject = self::TABLE_COURSE_SUBJECT;
-        $courseNumber = self::TABLE_COURSE_NUMBER;
+        $courseSubject = self::TABLE_COURSE_SUBJECT;        
+        $courseNumber = self::TABLE_COURSE_NUMBER;                
         
-        $cac = self::TABLE_CLLO_AND_COURSE;
-        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_CLLO_ID;
-        $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
+        $cac = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $cacCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
+        $cacLevelID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_LEVEL_ID;
+       
+        // Perform the query and get the rows with the IDs
+        $query = "SELECT DISTINCT * FROM (SELECT $cac.$cacCourseID, $cac.$cacLevelID FROM ($course JOIN $cac ON $course.$courseID = $cac.$cacCourseID) WHERE $cac.$cacCLLOID = ? ORDER BY $course.$courseSubject, $course.$courseNumber) AS $cac";
+        $queryRowArray = $this->getQueryResults($query, array($idValue));
         
-        $query = "SELECT $course.* FROM $course JOIN (SELECT * FROM $cac WHERE $cac.$cacCLLOID = ?) AS $cac ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber ASC";
-        $courseEntryArray = $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, array($idValue)), 
-            'CourseEntry');
-        return new Course($courseEntryArray); 
+        // Set up the return array and go through each ID pair
+        $courseAndLevelArray = array();
+        foreach ($queryRowArray as $queryRow) {
+            $course = $this->getCourseFromID($queryRow[$cacCourseID]);
+            $clloLevel = $this->getCLLOLevelFromID($queryRow[$cacLevelID]);
+
+            $courseAndLevelArray[] = new CourseAndCLLOLevel($course, $clloLevel);
+        }
+        
+        return $courseAndLevelArray; 
     }
+    
+    /**
+     * Extracts the DB row for CLLOs, courses and levels for a particular 
+     * CLLO ID.
+     *
+     * @param $idValue      The id of the CLLO (string or numeric)
+     * @return              A Course object
+     */
+    public function getCLLOsAndCoursesAndCLLOLevelsForCLLOID($idValue) {
+        $cacal = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $cacalCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $cacalCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
+       
+        // Perform the query and get the rows with the IDs
+        $query = "SELECT * FROM $cacal WHERE $cacalCLLOID = ?";
+        $queryRowArray = $this->getQueryResults($query, array($idValue));       
+        
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($idValue)),
+            'CLLOAndCourseAndLevel'); 
+    }
+
+    /**
+     * Extracts the level at which a CLLO is associated with a given course.
+     *
+     * @param $clloIDValue      
+     * @param $courseIDValue      
+     * @return                  A CLLOLevel object
+     */
+    public function getLevelForCLLOAndCourse($clloIDValue, $courseIDValue) {        
+        $cacal = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $cacalCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $cacalCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
+        $cacalLevelID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_LEVEL_ID;
+        
+        $clloLevel = self::TABLE_CLLOLEVEL;
+        $clloLevelID = self::TABLE_CLLOLEVEL_ID;
+       
+        // Perform the query and get the rows with the IDs
+        $query = "SELECT $clloLevel.* FROM (SELECT * FROM $cacal WHERE $cacal.$cacalCLLOID = ? AND $cacal.$cacalCourseID = ?) AS $cacal JOIN $clloLevel ON $cacal.$cacalLevelID = $clloLevel.$clloLevelID";        
+        return $this->createObjectFromDatabaseRow(
+            $this->getQueryResult($query, array($clloIDValue, $courseIDValue)),
+            'CLLOLevel');         
+    }     
 
     /**
      * Determines the PLLOs associated with a set of CLLOs.
@@ -2353,6 +2471,33 @@ class CurriculumMappingDatabase extends DatabaseManager {
             $this->getQueryResults($query, $clloIDValuesArray),
             'PlanLevelLearningOutcome');
     }
+    
+    /**
+     * Determines the PLLOs associated with one CLLO.
+     *
+     * NOTE: 'Direct' is used in the function name because it looks for a
+     * direct connection in the database (<em>i.e.</em>, in the table
+     * cllo_and_pllo). Indirect connections (<em>e.g.</em>, from a CLLO - ILO -
+     * - PLLO) are not yet supported but may be.
+     *
+     * @param $clloIDValue     The id of the CLLO (string or numeric)
+     * @return                 An array of all the PLLOs (no duplicates) 
+     *                         supported by the CLLO
+     */
+    public function getDirectPLLOsForCLLO($clloIDValue) {
+        $pllo = self::TABLE_PLLO;
+        $plloID = self::TABLE_PLLO_ID;
+        $plloNumber = self::TABLE_PLLO_NUMBER;
+        
+        $cap = self::TABLE_CLLO_AND_PLLO;
+        $capPLLOID = self::TABLE_CLLO_AND_PLLO_PLLO_ID;
+        $capCLLOID = self::TABLE_CLLO_AND_PLLO_CLLO_ID;
+
+        $query = "SELECT $pllo.* FROM $pllo JOIN (SELECT * FROM $cap WHERE $cap.$capCLLOID = ?) AS $cap ON $pllo.$plloID = $cap.$capPLLOID ORDER BY $pllo.$plloNumber ASC";
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($clloIDValue)),
+            'PlanLevelLearningOutcome');
+    }    
 
     /**
      * Determines the PLLOs associated with an DLE.
@@ -2431,11 +2576,11 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $capPLLOID = self::TABLE_CLLO_AND_PLLO_PLLO_ID;
         $capCLLOID = self::TABLE_CLLO_AND_PLLO_CLLO_ID;
 
-        $cac = self::TABLE_CLLO_AND_COURSE;
-        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_CLLO_ID;
-        $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
+        $cac = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $cacCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
 
-        $query = "SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cap WHERE $cap.$capPLLOID = ?) AS $cap ON $cllo.$clloID = $cap.$capCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC";
+        $query = "SELECT DISTINCT * FROM (SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cap WHERE $cap.$capPLLOID = ?) AS $cap ON $cllo.$clloID = $cap.$capCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC) AS $cllo";
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($plloIDValue)),
             'CourseLevelLearningOutcome');
@@ -2467,9 +2612,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $capPLLOID = self::TABLE_CLLO_AND_PLLO_PLLO_ID;
         $capCLLOID = self::TABLE_CLLO_AND_PLLO_CLLO_ID;
 
-        $cac = self::TABLE_CLLO_AND_COURSE;
-        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_CLLO_ID;
-        $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
+        $cac = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $cacCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
 
         $query = "SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cap WHERE $cap.$capPLLOID = ?) AS $cap ON $cllo.$clloID = $cap.$capCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN (SELECT * FROM $course WHERE $course.$courseSubject = ?) AS $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC";
         return $this->createObjectsFromDatabaseRows(
@@ -2502,9 +2647,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $caiILOID = self::TABLE_CLLO_AND_ILO_ILO_ID;
         $caiCLLOID = self::TABLE_CLLO_AND_ILO_CLLO_ID;
 
-        $cac = self::TABLE_CLLO_AND_COURSE;
-        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_CLLO_ID;
-        $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
+        $cac = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $cacCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
 
         $query = "SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cai WHERE $cai.$caiILOID = ?) AS $cai ON $cllo.$clloID = $cai.$caiCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC";
         return $this->createObjectsFromDatabaseRows(
@@ -2757,9 +2902,9 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $courseID = self::TABLE_COURSE_ID;
         $courseSubject = self::TABLE_COURSE_SUBJECT;
         
-        $cac = self::TABLE_CLLO_AND_COURSE;
-        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_CLLO_ID;
-        $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
+        $cac = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $cacCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
         
         $cap = self::TABLE_CLLO_AND_PLLO;
         $capPLLOID = self::TABLE_CLLO_AND_PLLO_PLLO_ID;
@@ -2862,6 +3007,50 @@ class CurriculumMappingDatabase extends DatabaseManager {
             'PlanLevelLearningOutcome');
     }
     
+    /**
+     * 
+     * @param type $courseIDArray
+     * @return type
+     */
+    public function getPLLOsForSeveralCourses($courseIDArray, $excludeIDArray) {
+        $pllo = self::TABLE_PLLO;
+        $plloID = self::TABLE_PLLO_ID;
+        $plloNumber = self::TABLE_PLLO_NUMBER;
+        
+        $pap = self::TABLE_PLAN_AND_PLLO;
+        $papPlanID = self::TABLE_PLAN_AND_PLLO_PLAN_ID;
+        $papPLLOID = self::TABLE_PLAN_AND_PLLO_PLLO_ID;
+        
+        $dap = self::TABLE_DEPARTMENT_AND_PLAN;
+        $dapPlanID = self::TABLE_DEPARTMENT_AND_PLAN_PLAN_ID;
+        $dapDepartmentID = self::TABLE_DEPARTMENT_AND_PLAN_DEPARTMENT_ID;
+                
+        $das = self::TABLE_DEPARTMENT_AND_SUBJECT;
+        $dasDepartmentID = self::TABLE_DEPARTMENT_AND_SUBJECT_DEPARTMENT_ID;
+        $dasSubject = self::TABLE_DEPARTMENT_AND_SUBJECT_SUBJECT;
+        
+        $course = self::TABLE_COURSE;
+        $courseID = self::TABLE_COURSE_ID;
+        $courseSubject = self::TABLE_COURSE_SUBJECT;
+                        
+        $query = "SELECT DISTINCT $pllo.* FROM ";
+        if ($excludeIDArray) {
+            $query .= "(SELECT * FROM $pllo WHERE $pllo.$plloID NOT IN ";
+            $query .= self::getQuestionMarkString($excludeIDArray);
+            $query .= ") AS $pllo ";
+        }
+        else {
+            $query .= "$pllo ";
+        }    
+        $query .= "JOIN $pap ON $pllo.$plloID = $pap.$papPLLOID JOIN $dap ON $pap.$papPlanID = $dap.$dapPlanID JOIN (SELECT $das.* FROM $das JOIN (SELECT * FROM $course WHERE $course.$courseID IN ";        
+        $query .= self::getQuestionMarkString($courseIDArray);
+        $query .= ") AS $course ON $das.$dasSubject = $course.$courseSubject) AS $das ON $dap.$dapDepartmentID = $das.$dasDepartmentID ORDER BY $pllo.$plloNumber ASC";
+        
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array_merge($excludeIDArray, $courseIDArray)),
+            'PlanLevelLearningOutcome');
+    }
+    
 
 
     /**************************************************************************
@@ -2894,7 +3083,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @param $searchString    The substring to look for
      * @return                 An array of all the matching courses
      */
-    public function findMatchingCourses($searchString) {
+    public function findMatchingCourses($searchString, $excludeIDArray = array()) {
         $course = self::TABLE_COURSE;
         $courseID = self::TABLE_COURSE_ID;
         $courseSubject = self::TABLE_COURSE_SUBJECT;
@@ -2914,10 +3103,15 @@ class CurriculumMappingDatabase extends DatabaseManager {
             $connector = 'AND';
         }        
 
-        $query = "SELECT * FROM $course WHERE ($courseSubject LIKE ?) $connector ($courseNumber LIKE ?) ORDER BY {$courseSubject}, $courseNumber ASC";                    
+        $query = "SELECT * FROM $course WHERE (($courseSubject LIKE ?) $connector ($courseNumber LIKE ?))";
+        if (! empty($excludeIDArray)) {
+            $query .= " AND $courseID NOT IN ";
+            $query .= self::getQuestionMarkString($excludeIDArray);
+        }        
+        $query .= " ORDER BY {$courseSubject}, $courseNumber ASC";
         
         $courseEntryArray = $this->createObjectsFromDatabaseRows(
-            $this->getQueryResults($query, $valueArray),
+            $this->getQueryResults($query, array_merge($valueArray, $excludeIDArray)),
             'CourseEntry');
         return Course::buildCoursesFromCourseEntries($courseEntryArray);
        
@@ -3348,11 +3542,13 @@ class CurriculumMappingDatabase extends DatabaseManager {
      *
      * @return      An array of all the resulting Revisions
      */
-    public function getAllRevisions() {
+    public function getAllRevisions($limit = QSC_CMP_REVISIONS_DEFAULT_LIMIT) {
+        $revision = self::TABLE_REVISION;
+        $revisionDAT = self::TABLE_REVISION_DATE_AND_TIME;
+        
+        $query = "SELECT * FROM $revision ORDER BY $revisionDAT DESC LIMIT $limit";        
         return $this->createObjectsFromDatabaseRows(
-            $this->getAllRows(self::TABLE_REVISION, 
-                self::TABLE_REVISION_ID, self::TABLE_REVISION_DATE_AND_TIME, 
-                array(), array(), "DESC"),
+             $this->getQueryResults($query, array()),
             'Revision');
     }
         
@@ -3488,18 +3684,19 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @param $courseIDValue    The ID of the course (string or numeric)
      * @return                  An array of all matching CLLO-and-PLLO IDs
      */
-    public function getCLLOsAndPLLOsForDLEAndCourse($dleIDValue, $courseIDValue) {
+    public function getCLLOsForDLEAndCourse($dleIDValue, $courseIDValue) {
         $cap = self::TABLE_CLLO_AND_PLLO;
         $capPLLOID = self::TABLE_CLLO_AND_PLLO_PLLO_ID;
         $capCLLOID = self::TABLE_CLLO_AND_PLLO_CLLO_ID;
 
         $pllo = self::TABLE_PLLO;
         $plloID = self::TABLE_PLLO_ID;
+        $plloNumber = self::TABLE_PLLO_NUMBER;
         $plloParentID = self::TABLE_PLLO_PARENT_ID;
 
-        $cac = self::TABLE_CLLO_AND_COURSE;
-        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_CLLO_ID;
-        $cacCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
+        $cac = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $cacCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $cacCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
 
         $cllo = self::TABLE_CLLO;
         $clloID = self::TABLE_CLLO_ID;
@@ -3509,10 +3706,17 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $padDLEID = self::TABLE_PLLO_AND_DLE_DLE_ID;
         $padPLLOID = self::TABLE_PLLO_AND_DLE_PLLO_ID;
         
-        $query = "SELECT $cap.* FROM $cap JOIN (SELECT * FROM $cac WHERE $cac.$cacCourseID = ?) AS $cac ON $cac.$cacCLLOID = $cap.$capCLLOID JOIN $pllo ON $cap.$capPLLOID = $pllo.$plloID JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON (($pad.$padPLLOID = $pllo.$plloID) OR ($pad.$padPLLOID = $pllo.$plloParentID)) JOIN $cllo ON $cap.$capCLLOID = $cllo.$clloID ORDER BY $cllo.$clloNumber ASC";
+        $query = "SELECT DISTINCT $cllo.* FROM $cap JOIN (SELECT * FROM $cac WHERE $cac.$cacCourseID = ?) AS $cac ON $cac.$cacCLLOID = $cap.$capCLLOID JOIN $pllo ON $cap.$capPLLOID = $pllo.$plloID JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON (($pad.$padPLLOID = $pllo.$plloID) OR ($pad.$padPLLOID = $pllo.$plloParentID)) JOIN $cllo ON $cap.$capCLLOID = $cllo.$clloID ORDER BY $cllo.$clloNumber ASC";
+        return $this->createObjectsFromDatabaseRows(
+            $this->getQueryResults($query, array($courseIDValue, $dleIDValue)),
+            'CourseLevelLearningOutcome');
+        
+        /*
+        $query = "SELECT $cap.* FROM $cap JOIN (SELECT * FROM $cac WHERE $cac.$cacCourseID = ?) AS $cac ON $cac.$cacCLLOID = $cap.$capCLLOID JOIN $pllo ON $cap.$capPLLOID = $pllo.$plloID JOIN (SELECT * FROM $pad WHERE $pad.$padDLEID = ?) AS $pad ON (($pad.$padPLLOID = $pllo.$plloID) OR ($pad.$padPLLOID = $pllo.$plloParentID)) JOIN $cllo ON $cap.$capCLLOID = $cllo.$clloID ORDER BY $cllo.$clloNumber, $pllo.$plloNumber ASC";
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($courseIDValue, $dleIDValue)),
             'CLLOAndPLLO');
+         */
     }
 
 
@@ -3582,7 +3786,6 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $currentValue = $revision->getCurrentValue();
 
         $query = "UPDATE $table SET $column = ? WHERE ".$revision->getPrimaryKeyQueryClause();
-
         /*
         echo "<p>$query</br>";
         print_r(array_merge(
@@ -3645,27 +3848,28 @@ class CurriculumMappingDatabase extends DatabaseManager {
          );
          $this->insertRevision($revision);
 
-         // Determine the course to which the CLLO is related
-         $courseID = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_CLLO_COURSE_SELECT, FILTER_SANITIZE_NUMBER_INT);
-         $course = $this->getCourseFromID($courseID);
+         // Determine the courses to which the CLLO is related and their levels
+         $clloAndCourseAndLevelArray = CLLOAndCourseAndLevel::buildFromCLLOPostData($newCLLO->getDBID());
+         foreach ($clloAndCourseAndLevelArray as $clloAndCourseAndLevel) {
 
-         // Add their relationship to the database
-         $clloAndCourse = new CLLOAndCourse($newCLLO->getDBID(),
-            $course->getDBID());
-         $this->insertCLLOAndCourse($clloAndCourse);
+            // Add this relationship to the database
+            $this->insertCLLOAndCourseAndLevel($clloAndCourseAndLevel);
 
-         // Insert a revision for adding the new CLLOAndCourse
-         $revision = new Revision(
-             DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
-             self::TABLE_CLLO_AND_COURSE, null,
-             array(
-                 self::TABLE_CLLO_AND_COURSE_CLLO_ID => $newCLLO->getDBID(),
-                 self::TABLE_CLLO_AND_COURSE_COURSE_ID =>
-                 $course->getDBID()),
-             self::TABLE_REVISION_ACTION_ADDED,
-             null, $dateAndTime
-         );
-         $this->insertRevision($revision);
+            // Insert a revision for adding the new $clloAndCourseAndLevel
+            $revision = new Revision(
+                DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
+                self::TABLE_CLLO_AND_COURSE_AND_LEVEL, null,
+                array(
+                    self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID => $newCLLO->getDBID(),
+                    self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID =>
+                    $clloAndCourseAndLevel->getCourseDBID(),
+                    self::TABLE_CLLO_AND_COURSE_AND_LEVEL_LEVEL_ID =>
+                    $clloAndCourseAndLevel->getLevelDBID()),
+                self::TABLE_REVISION_ACTION_ADDED,
+                null, $dateAndTime
+            );
+            $this->insertRevision($revision);
+         }
 
          // Create the connections between the new CLLO and any PLLOs
          $plloIDArray = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_FORM_CLLO_PLLO_LIST_SUPPORTED, FILTER_SANITIZE_NUMBER_INT);
@@ -3884,15 +4088,18 @@ class CurriculumMappingDatabase extends DatabaseManager {
 
     /**
      * 
-     * @param type $clloAndCourse
+     * @param type $clloAndCourseAndLevel
      */
-    protected function insertCLLOAndCourse($clloAndCourse) {
-        $tableName = self::TABLE_CLLO_AND_COURSE;
-        $colCLLOID = self::TABLE_CLLO_AND_COURSE_CLLO_ID;
-        $colCourseID = self::TABLE_CLLO_AND_COURSE_COURSE_ID;
+    protected function insertCLLOAndCourseAndLevel($clloAndCourseAndLevel) {
+        $tableName = self::TABLE_CLLO_AND_COURSE_AND_LEVEL;
+        $colCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
+        $colCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
+        $colLevelID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_LEVEL_ID;
 
-        $query = "INSERT INTO $tableName ($colCLLOID, $colCourseID) VALUES (?, ?)";
-        $valueArray = array($clloAndCourse->getCLLODBID(), $clloAndCourse->getCourseDBID());
+        $query = "INSERT INTO $tableName ($colCLLOID, $colCourseID, $colLevelID) VALUES (?, ?, ?)";
+        $valueArray = array($clloAndCourseAndLevel->getCLLODBID(), 
+            $clloAndCourseAndLevel->getCourseDBID(),
+            $clloAndCourseAndLevel->getLevelDBID());
 
         /*
         echo "<p>$query</br>";
@@ -4035,7 +4242,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $this->insertRevisions($revisionArray);
 
         // Now move onto the CLLO's relationships
-        $this->updateCLLOCourseFromPostData($originalCLLO, $userID, $dateAndTime);
+        $this->updateCLLOCoursesAndLevelsFromPostData($originalCLLO, $userID, $dateAndTime);
         $this->updateCLLOsAndPLLOsFromPostData($originalCLLO, $userID, $dateAndTime);
         $this->updateCLLOsAndILOsFromPostData($originalCLLO, $userID, $dateAndTime);
 
@@ -4054,51 +4261,96 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @param $userID
      * @param $dateAndTime
      */
-    protected function updateCLLOCourseFromPostData($originalCLLO, $userID, $dateAndTime) {
+    protected function updateCLLOCoursesAndLevelsFromPostData($originalCLLO, $userID, $dateAndTime) {
         // Get the course ID from the form data
-        $updatedCourseID = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_CLLO_COURSE_SELECT, FILTER_SANITIZE_NUMBER_INT);
-        if (! $updatedCourseID) {
-            return;
-        }
-
+        $newCLLOAndCourseAndLevelArray = CLLOAndCourseAndLevel::buildFromCLLOPostData(
+                $originalCLLO->getDBID());
+        
         // Get the courses and determine if there's been a change
-        $originalCourse = $this->getCourseForCLLO($originalCLLO->getDBID());
-        $updatedCourse = $this->getCourseFromID($updatedCourseID);
-        if ($originalCourse->getDBID() == $updatedCourse->getDBID()) {
+        $originalCLLOAndCourseAndLevelArray = $this->getCLLOsAndCoursesAndCLLOLevelsForCLLOID($originalCLLO->getDBID());
+
+        // Remove any identical values
+        qsc_core_remove_identical_values($newCLLOAndCourseAndLevelArray, 
+            $originalCLLOAndCourseAndLevelArray);
+        
+        // If there are no changes, then return
+        if (empty($newCLLOAndCourseAndLevelArray) && empty($originalCLLOAndCourseAndLevelArray)) {
             return;
         }
+        
+        /*
+        foreach ($updatedCLLOAndCourseAndLevelArray as $thing) {
+            error_log("To add: ".$thing->getCLLODBID().", ".$thing->getCourseDBID().", ".$thing->getLevelDBID());
+        }
+        foreach ($originalCLLOAndCourseAndLevelArray as $thing) {
+            error_log("To remove: ".$thing->getCLLODBID().", ".$thing->getCourseDBID().", ".$thing->getLevelDBID());
+        }
+        */
 
-        // Delete the old entry and add a revison
-        $revision = new Revision(
-            DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
-            self::TABLE_CLLO_AND_COURSE, null,
-            array(
-                self::TABLE_CLLO_AND_COURSE_CLLO_ID => $originalCLLO->getDBID(),
-                self::TABLE_CLLO_AND_COURSE_COURSE_ID =>
-                $originalCourse->getDBID()),
-            self::TABLE_REVISION_ACTION_DELETED,
-            null, $dateAndTime
-        );
+        // It's possible that the level for a CLLO and course has been changed;
+        // handle those.
+        $revisionArray = array();
+        foreach ($newCLLOAndCourseAndLevelArray as $newKey => $newCCL) {
+            foreach ($originalCLLOAndCourseAndLevelArray as $originalKey => $originalCCL) {
+                if (($newCCL->getCLLODBID() == $originalCCL->getCLLODBID()) &&
+                    ($newCCL->getCourseDBID() == $originalCCL->getCourseDBID())) {
+                    //error_log($newCCL->getCLLODBID().",".$newCCL->getCourseDBID().",".$originalCCL->getLevelDBID());                    
+                    
+                    unset($newCLLOAndCourseAndLevelArray[$newKey]);
+                    unset($originalCLLOAndCourseAndLevelArray[$originalKey]);
+                    
+                    error_log($originalCCL->getLevelDBID());
+                    $revisionArray[] = new Revision(
+                        DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
+                        self::TABLE_CLLO_AND_COURSE_AND_LEVEL, 
+                        self::TABLE_CLLO_AND_COURSE_AND_LEVEL_LEVEL_ID,
+                        array(self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID =>
+                                $originalCCL->getCLLODBID(),
+                            self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID =>
+                                $originalCCL->getCourseDBID()),
+                        self::TABLE_REVISION_ACTION_EDITED,
+                        $originalCCL->getLevelDBID(), $dateAndTime,
+                        $newCCL->getLevelDBID()
+                    );
+                    
+                    // error_log($revisionArray[count($revisionArray) - 1]->getComponentNameAndLink($this));
+                }
+            }
+        }        
+        
+        // Everything left in the prior set has been deleted
+        foreach($originalCLLOAndCourseAndLevelArray as $deletedCLLOAndCourseAndLevel) {
+            $revisionArray[] = new Revision(
+                DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
+                self::TABLE_CLLO_AND_COURSE_AND_LEVEL, null,
+                array(self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID =>
+                        $deletedCLLOAndCourseAndLevel->getCLLODBID(),
+                    self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID =>
+                        $deletedCLLOAndCourseAndLevel->getCourseDBID()),
+                self::TABLE_REVISION_ACTION_DELETED,
+                null, $dateAndTime
+            );
+        }
 
-        $this->performDeleteRevision($revision);
-        $this->insertRevision($revision);
+        // Everything left in the new set has been added
+        foreach($newCLLOAndCourseAndLevelArray as $addedCLLOAndCourseAndLevel) {
+            $this->insertCLLOAndCourseAndLevel($addedCLLOAndCourseAndLevel);
+            $revisionArray[] = new Revision(
+                DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
+                self::TABLE_CLLO_AND_COURSE_AND_LEVEL, null,
+                array(self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID =>
+                        $addedCLLOAndCourseAndLevel->getCLLODBID(),
+                    self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID =>
+                        $addedCLLOAndCourseAndLevel->getCourseDBID()),
+                self::TABLE_REVISION_ACTION_ADDED,
+                null, $dateAndTime
+            );
+        }
 
-        // Add a new entry and a revision
-        $revision = new Revision(
-            DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
-            self::TABLE_CLLO_AND_COURSE, null,
-            array(
-                self::TABLE_CLLO_AND_COURSE_CLLO_ID => $originalCLLO->getDBID(),
-                self::TABLE_CLLO_AND_COURSE_COURSE_ID =>
-                $updatedCourse->getDBID()),
-            self::TABLE_REVISION_ACTION_ADDED,
-            null, $dateAndTime
-        );
-
-        $updatedCLLOAndCourse = new CLLOAndCourse($originalCLLO->getDBID(), $updatedCourse->getDBID());
-
-        $this->insertCLLOAndCourse($updatedCLLOAndCourse);
-        $this->insertRevision($revision);
+        // Perform the changes/revisions and add each revision to the
+        // database
+        $this->performEditAndDeleteRevisions($revisionArray);
+        $this->insertRevisions($revisionArray);        
     }
 
     /**
@@ -4478,15 +4730,17 @@ class CurriculumMappingDatabase extends DatabaseManager {
 
         // Create a revision to remove the connection between the
         // CLLO and its course
-        $course = $this->getCourseForCLLO($clloID);
-        $revisionArray[] = new Revision(
-            DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
-            self::TABLE_CLLO_AND_COURSE, null,
-            array(self::TABLE_CLLO_AND_COURSE_CLLO_ID => $clloID,
-                self::TABLE_CLLO_AND_COURSE_COURSE_ID => $course->getDBID()),
-            self::TABLE_REVISION_ACTION_DELETED,
-            null, $dateAndTime
-        );
+        $courseAndLevelArray = $this->getCoursesAndCLLOLevelsForCLLO($clloID);
+        foreach ($courseAndLevelArray as $courseAndLevel) {
+            $revisionArray[] = new Revision(
+                DatabaseObject::NEW_OBJECT_TEMP_ID, $userID,
+                self::TABLE_CLLO_AND_COURSE_AND_LEVEL, null,
+                array(self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID => $clloID,
+                    self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID => $courseAndLevel->getCourse()->getDBID()),
+                self::TABLE_REVISION_ACTION_DELETED,
+                null, $dateAndTime
+            );
+        }
 
         // Get the CLLO and PLLO information in the database
         $clloAndPLLOArray = $this->getCLLOsAndPLLOsForCLLO($clloID);

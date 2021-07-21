@@ -29,44 +29,47 @@ use Managers\CurriculumMappingDatabase as CMD;
 
 
 /**
- * The class CLLOAndCourse represents a relationship between a CLLO and Course as
- * stored in the database.
+ * The class CLLOAndCourseAndLevel represents a relationship between a CLLO 
+ * and a Course at a CLLOLevel as stored in the database.
  */
-class CLLOAndCourse extends BiRelationship {
+class CLLOAndCourseAndLevel extends TriRelationship {
     /**************************************************************************
      * Static Functions
      **************************************************************************/
     /**
      * This function uses the values in $_POST following an 'Add' or 'Edit'
-     * form submission to create a new CLLOAndCourse object and set
+     * form submission to create a new CLLOAndCourseAndLevel object and set
      * the values of the member variables.
      *
      * @param $clloID        The ID of the CLLO
      */
     public static function buildFromCLLOPostData($clloID) {
-        $clloAndCourseArray = array();
-
-        $courseID = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_CLLO_COURSE_SELECT, FILTER_SANITIZE_NUMBER_INT);
-        if (! $courseID) {
-            return null;
+        $clloAndCourseAndLevelArray = array();       
+        
+        $courseIDArray = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED, FILTER_SANITIZE_NUMBER_INT);
+        $levelIDArray = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED, FILTER_SANITIZE_NUMBER_INT);
+        
+        foreach ($courseIDArray as $index => $courseID) {
+            $clloAndCourseAndLevelArray[] = new CLLOAndCourseAndLevel($clloID, $courseID, $levelIDArray[$index]);
         }
-
-        return new CLLOAndCourse($clloID, $courseID);
+        
+        return $clloAndCourseAndLevelArray;
     }
 
     /**
      * This function uses the values in a database row to create a new
-     * CLLOAndCourse object and set the values of the member variables.
+     * CLLOAndCourseAndLevel object and set the values of the member variables.
      *
      * @param $argArray        The course row from the database
-     * @return                 A CLLOAndCourse with the corresponding
+     * @return                 A CLLOAndCourseAndLevel with the corresponding
      *                         information
      */ 
      public static function buildFromDBRow($argArray) {
-         $clloID = $argArray[CMD::TABLE_CLLO_AND_COURSE_CLLO_ID];
-         $courseID = $argArray[CMD::TABLE_CLLO_AND_COURSE_COURSE_ID];
+         $clloID = $argArray[CMD::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID];
+         $courseID = $argArray[CMD::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID];
+         $levelID = $argArray[CMD::TABLE_CLLO_AND_COURSE_AND_LEVEL_LEVEL_ID];
 
-         return new CLLOAndCourse($clloID, $courseID);
+         return new CLLOAndCourseAndLevel($clloID, $courseID, $levelID);
      }
 
 
@@ -79,8 +82,8 @@ class CLLOAndCourse extends BiRelationship {
      * @param type $argCLLODBID
      * @param type $argCourseDBID
      */
-    public function __construct($argCLLODBID, $argCourseDBID) {
-        parent::__construct($argCLLODBID, $argCourseDBID);
+    public function __construct($argCLLODBID, $argCourseDBID, $argLevelDBID) {
+        parent::__construct($argCLLODBID, $argCourseDBID, $argLevelDBID);
     }
 
 
@@ -90,7 +93,7 @@ class CLLOAndCourse extends BiRelationship {
     /**
      * The get method for the CLLO's database ID.
      *
-     * @return      The string ID
+     * @return      The int ID
      */
     public function getCLLODBID() {
         return $this->firstDBID;
@@ -99,9 +102,19 @@ class CLLOAndCourse extends BiRelationship {
     /**
      * The get method for the Course's database ID.
      *
-     * @return      The string ID
+     * @return      The int ID
      */
     public function getCourseDBID() {
         return $this->secondDBID;
     }
+    
+    /**
+     * The get method for the CLLOLevel's database ID.
+     *
+     * @return      The int ID
+     */
+    public function getLevelDBID() {
+        return $this->thirdDBID;
+    }
+    
 }

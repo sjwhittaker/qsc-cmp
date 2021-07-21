@@ -841,7 +841,7 @@ function qsc_cmp_display_ilo_table($ilo_array) {
  * @param type $displayPLLOs
  * @param type $indentChildren
  */
-function qsc_cmp_display_cllo_table($cllo_array, $db_curriculum = null, $db_calendar = null, $displayCourse = false, $displayPLLOs = false, $indentChildren = false) {
+function qsc_cmp_display_cllo_table($cllo_array, $db_curriculum = null, $db_calendar = null, $single_course = null, $display_pllos = false, $indent_children = false) {
     if (empty($cllo_array)) {
         return;
     }    
@@ -849,39 +849,88 @@ function qsc_cmp_display_cllo_table($cllo_array, $db_curriculum = null, $db_cale
     <table>
         <thead>
             <tr>
-                <?php if ($displayCourse) : ?><th>Course</th><?php endif; ?>
                 <th>Number</th>
+                <?php if (! $single_course) : ?>
+                <th>Courses</th>
+                <?php endif; ?>
+                <th>Level</th>
                 <th>Type</th>
-                <?php if ($displayPLLOs) : ?><th>PLLOs</th><?php endif; ?>
+                <?php if ($display_pllos) : ?><th>PLLOs</th><?php endif; ?>
                 <th>Text</th>
             </tr>
         </thead>
         <tbody>
     <?php foreach ($cllo_array as $cllo) : 
-        $course = ($displayCourse) ? $db_curriculum->getCourseForCLLO($cllo->getDBID()) : null;
+        $course_and_level_array = array();
+        $course_and_level_array_span = 1;
+        $cllo_pllo_array = array();
         
-        $cllo_pllo_array = ($displayPLLOs) ? $db_curriculum->getDirectPLLOsForCLLOs(array($cllo->getDBID())) : null;
-        $cllo_pllo_last_index = ($displayPLLOs) ? count($cllo_pllo_array) - 1 : 0;
+        $cllo_level = null;
         
-        $indent_this_row = $indentChildren && $cllo->hasParent();
+        // Determine how to set up the rows
+        if ($single_course) {
+            $course_to_use = $single_course;
+            $cllo_level = $db_curriculum->getLevelForCLLOAndCourse($cllo->getDBID(), $single_course->getDBID());         
+        }
+        else {
+            $course_and_level_array = $db_curriculum->getCoursesAndCLLOLevelsForCLLO($cllo->getDBID());
+            $course_and_level_array_span = count($course_and_level_array);
+            
+            if ($course_and_level_array_span != 0) {
+                $course_to_use = $course_and_level_array[0]->getCourse();
+                $cllo_level = $course_and_level_array[0]->getCLLOLevel();         
+            }
+            else {
+                $course_and_level_array_span = 1;
+            }
+        
+        }
+                        
+        
+        $indent_this_row = $indent_children && $cllo->hasParent();
         $number_class = ($indent_this_row) ? ' class="child-cllo"' : '';
+        
+        // Print out the first row for the CLLO
         ?>
             <tr>
-        <?php if ($displayCourse) : ?>
-                <td><?= $course->getAnchorToView($db_calendar); ?></td>
-        <?php endif; ?>
-                <td<?= $number_class ?>><?= $cllo->getAnchorToView(); ?></td>             
-                <td><?= $cllo->getType(); ?></td>
-        <?php if($displayPLLOs) : ?>
+                <td<?= $number_class ?> rowspan="<?= $course_and_level_array_span ?>"><?= $cllo->getAnchorToView(); ?></td>
+                <?php if (! $single_course) : ?>
                 <td>
-            <?php foreach ($cllo_pllo_array as $index => $cllo_pllo) : ?>
-                <?= $cllo_pllo->getAnchorToView(); ?><?php if ($index < $cllo_pllo_last_index) { ?><br/><?php } ?>
-            <?php endforeach; ?>
+                    <?= ($course_to_use) ? $course_to_use->getAnchorToView($db_calendar) : QSC_CMP_TEXT_NONE_SPECIFIED ?>
+                </td>
+                <?php endif; ?>
+                <td><?= ($cllo_level) ? $cllo_level->getName() : '' ?></td>
+                <td rowspan="<?= $course_and_level_array_span ?>"><?= $cllo->getType(); ?></td>
+        <?php if ($display_pllos ) : 
+            $cllo_pllo_array = $db_curriculum->getDirectPLLOsForCLLOs(array($cllo->getDBID())); ?>
+                <td rowspan="<?= $course_and_level_array_span ?>">
+            <?php if (! empty($cllo_pllo_array)) : 
+                if (count($cllo_pllo_array) == 1) : ?>
+                    <?= $cllo_pllo_array[0]->getAnchorToView(); ?>
+                <?php else: ?>                    
+                    <ul>
+                    <?php foreach ($cllo_pllo_array as $index => $cllo_pllo) : ?>
+                        <li><?= $cllo_pllo->getAnchorToView(); ?></li>
+                 <?php endforeach; ?>
+                    </ul>
+                <?php endif;
+            endif; ?>
                 </td>
         <?php endif; ?>                
-                <td><?= $cllo->getText(); ?></td>            
+                <td rowspan="<?= $course_and_level_array_span ?>"><?= $cllo->getText(); ?></td>            
             </tr>
-    <?php endforeach; ?> 
+            
+        <?php // Now print out the other rows if it's associated with two
+        // or more courses
+        if ($course_and_level_array_span > 1) : 
+            for ($i = 1; $i < $course_and_level_array_span; $i++) : ?>
+            <tr>
+                <td><?= $course_and_level_array[$i]->getCourse()->getAnchorToView($db_calendar); ?></td>
+                <td><?= $course_and_level_array[$i]->getCLLOLevel()->getName(); ?></td>
+            </tr>
+            <?php endfor; ?>
+        <?php endif;
+        endforeach; ?> 
         </tbody>
     </table>    
     <?php
@@ -1184,7 +1233,21 @@ function qsc_cmp_display_property_columns($property_and_value_array, $multi_colu
 <?php foreach ($property_and_value_array as $property => $value): ?>
     <div class="row">
         <div class="<?= $property_class; ?> property"><?= $property; ?></div>
-        <div class="<?= $value_class; ?> value"><?= ($value) ? $value : QSC_CMP_TEXT_NONE_SPECIFIED; ?></div>
+        <div class="<?= $value_class; ?> value">
+        <?php if (is_array($value) && (! empty($value))) : 
+            if (count($value) == 1) : ?>
+            <?= $value[0] ?>
+            <?php else: ?>
+            <ul>
+                <?php foreach ($value as $item) : ?>
+                <li><?= $item ?></li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif;
+        else : ?>
+            <?= ($value) ? $value : QSC_CMP_TEXT_NONE_SPECIFIED; ?>
+        <?php endif; ?>
+        </div>
     </div>
 <?php endforeach; ?>        
 </div>    
@@ -1208,4 +1271,48 @@ function qsc_cmp_get_link_button($href, $text) {
  */
 function qsc_cmp_display_link_button($href, $text) {
     echo qsc_cmp_get_link_button($href, $text); 
+}
+
+/**
+ * 
+ * @param type $db_curriculum
+ * @param type $course
+ * @param type $cllo_array
+ */
+function qsc_cmp_display_course_cllo_level_pllo_table($db_curriculum, $course, $cllo_array) {
+    ?>
+                        <table class="course-cllo-level-pllo">
+                            <caption><a href="<?= $course->getLinkToView(); ?>"><?= $course->getName(); ?></a></caption>
+                            <thead>
+                                <tr>
+                                    <th>CLLO</th>
+                                    <th>Level</th>
+                                    <th>PLLO(s)</th>
+                                <tr>
+                            </thead>
+                            <tbody>
+                        <?php foreach ($cllo_array as $cllo) :                            
+                            $level = $db_curriculum->getLevelForCLLOAndCourse($cllo->getDBID(), 
+                                $course->getDBID());
+                            $pllo_array = $db_curriculum->getDirectPLLOsForCLLO($cllo->getDBID());
+                        ?>
+                                <tr>
+                                    <td><?= $cllo->getAnchorToView() ?></td>
+                                    <td><?= $level->getName() ?></td>
+                                    <td>
+                            <?php if (count($pllo_array) == 1) : ?>
+                                        <?= $pllo_array[0]->getAnchorToView() ?>
+                            <?php elseif (! empty($pllo_array)) : ?>
+                                        <ul>
+                                <?php foreach ($pllo_array as $pllo) : ?>
+                                            <li><?= $pllo->getAnchorToView() ?></li>                                            
+                                <?php endforeach; ?>                                            
+                                        </ul>                                        
+                            <?php endif; ?>                                    
+                                    </td>
+                                </tr>                        
+                        <?php endforeach; ?>
+                            <tbody>
+                        </table>    
+    <?php 
 }

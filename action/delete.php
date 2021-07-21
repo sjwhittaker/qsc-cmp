@@ -49,11 +49,19 @@ $form_result = null;
 if ($form_type == QSC_CMP_FORM_TYPE_DELETE_CLLO) {
     // It was an 'Delete CLLO' form
     $cllo_id = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_CLLO_ID, FILTER_SANITIZE_NUMBER_INT);
-    $cllo_course = $db_curriculum->getCourseForCLLO($cllo_id);
     $cllo = $db_curriculum->getCLLOFromID($cllo_id);
     
+    $cllo_course_and_level_array = $db_curriculum->getCoursesAndCLLOLevelsForCLLO($cllo_id);
+    
+    $cllo_course = null;
+    $redirect_link = QSC_CMP_DASHBOARD_PAGE_LINK;
+    if (! empty($cllo_course_and_level_array)) {
+        $cllo_course = $cllo_course_and_level_array[0]->getCourse();
+        
+        $redirect_link = $cllo_course->getLinkToView();            
+    }  
+    
     $db_curriculum->deleteCLLOFromID($cllo_id);    
-    $redirect_link = $cllo_course->getLinkToView();    
     $form_result = QSC_CMP_FORM_RESULT_DELETE_CLLO_SUCCESSFUL;
 }
 elseif ($form_type == QSC_CMP_FORM_TYPE_DELETE_PLLO) {

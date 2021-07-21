@@ -136,7 +136,7 @@ else:
 <p>There are no CLLOs set for this PLLO.</p>
         <?php
         else :
-            qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, true, false, true);
+            qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar);
         endif; ?>
 
 <h2>Institution Learning Outcomes</h2>

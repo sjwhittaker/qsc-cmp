@@ -37,6 +37,8 @@ $db_calendar = new CCD();
 
 $cllo_id = qsc_core_get_id_from_post(QSC_CMP_FORM_CLLO_ID);
 
+$page_title = '';
+
 if ($cllo_id === false) :
     qsc_cmp_start_html(array(
         QSC_CMP_START_HTML_TITLE => "Error Displaying CLLO"));
@@ -53,16 +55,21 @@ else:
 <h1>Error Finding Course Level Learning Outcome</h1>
     <?php qsc_core_log_and_display_error("A CLLO with that ID could not be retrieved from the database.");
     else :
-        // Get the course associated with the CLLO
-        $course = $db_curriculum->getCourseForCLLO($cllo_id);
+        $page_title = "Edit ".$cllo->getName()." for ";
+    
+        $course_and_level_array = $db_curriculum->getCoursesAndCLLOLevelsForCLLO($cllo->getDBID());
+        $course_array = qsc_core_map_member_function($course_and_level_array, 'getCourse');
+        $course_name_array = qsc_core_map_member_function($course_array, 'getName');
         
+        $page_title .= join(', ', $course_name_array);
+            
         qsc_cmp_start_html(array(
-            QSC_CMP_START_HTML_TITLE => "Edit ".$cllo->getName()." for ".$course->getName(),
+            QSC_CMP_START_HTML_TITLE => $page_title,
             QSC_CMP_START_HTML_SCRIPTS => array(QSC_CMP_SCRIPT_CLLO_FORMS_LINK)));
                 
 ?>
 
-<h1>Edit <?= $cllo->getName(); ?> for <?= $course->getName(); ?></h1>
+<h1><?= $page_title; ?></h1>
 
 <?php
         qsc_cmp_display_cllo_form(QSC_CMP_ACTION_EDIT_LINK, QSC_CMP_FORM_CLLO_EDIT, 

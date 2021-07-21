@@ -92,7 +92,7 @@ else:
     <p>There are no CLLOs set for this ILO.</p>
         <?php
         else :
-            qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, true, false);
+            qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, null, true, false);
         endif; 
         
         if ($ilo->isTopLevel()) : 

@@ -96,7 +96,7 @@ $dles_array = $db_curriculum->getAllDLEs();
                     <h3><?= $pllo->getAnchorToView(); ?></h3>            
                     <p class="pllo-text"><?= $pllo->getText(); ?></p>
                 </div>
-                <?php qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, true, false, true); ?>
+                <?php qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, null, false, true); ?>
             </div> <!-- .child-pllo -->            
             <?php
             
@@ -113,7 +113,7 @@ $dles_array = $db_curriculum->getAllDLEs();
                     <h4><?= $grandchild_pllo->getAnchorToView(); ?></h4>            
                     <p class="pllo-text"><?= $grandchild_pllo->getText(); ?></p>
                 </div>
-                    <?php qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, true, false, true); ?>
+                    <?php qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, null, false, true); ?>
             </div> <!-- .grandchild-pllo -->            
                 <?php endforeach;
             endforeach;

@@ -58,7 +58,7 @@ class CourseLevelLearningOutcome extends LearningOutcome {
         }
 
         // These values are optional and can be null
-        $parentDBID = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_CLLO_PARENT_SELECT, FILTER_SANITIZE_NUMBER_INT);
+        $parentDBID = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST, FILTER_SANITIZE_NUMBER_INT);
         $notes = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_FORM_CLLO_NOTES, FILTER_SANITIZE_STRING);
 
         return new CourseLevelLearningOutcome($id, $number, $text, $type, $ioa, $notes, $parentDBID);

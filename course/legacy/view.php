@@ -103,7 +103,7 @@ else:
         <?php if (empty($cllo_array)) : ?>
     <p>There are no CLLOs set for this course.</p>
         <?php else :
-            qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, false, true, true);
+            qsc_cmp_display_cllo_table($cllo_array, $db_curriculum, $db_calendar, $course, true, true);
         endif;
     endif;
 endif;

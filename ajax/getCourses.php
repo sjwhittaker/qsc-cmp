@@ -46,13 +46,14 @@ $output_array = array();
 if ($ajax_action == QSC_CMP_AJAX_ACTION_SEARCH_COURSES) {
     // Extract the search string from the input
     $query_value = qsc_core_extract_form_value(INPUT_POST, QSC_CMP_AJAX_INPUT_SEARCH, FILTER_SANITIZE_STRING);
+    $query_exclude_array = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_AJAX_INPUT_EXCLUDE, FILTER_SANITIZE_NUMBER_INT);
     if (! $query_value) {
         echo "";
         exit;        
     }
     
     // Perform the search
-    $courses_array = $db_curriculum->findMatchingCourses($query_value);
+    $courses_array = $db_curriculum->findMatchingCourses($query_value, $query_exclude_array);
 }
 else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_COURSE_FROM_ID) {
     // Extract the course ID from the input

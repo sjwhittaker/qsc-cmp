@@ -92,6 +92,19 @@ else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_COURSE) {
     // Prepare the value and get the PLLOs
     $pllos_array = $db_curriculum->getPLLOsForCourse($query_value);
 }
+else if ($ajax_action == QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_SEVERAL_COURSES) {
+    // Extract the course ID from the input
+    $query_id_array = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_AJAX_INPUT_ID_ARRAY, FILTER_SANITIZE_NUMBER_INT);
+    $exclude_id_array = qsc_core_extract_form_array_value(INPUT_POST, QSC_CMP_AJAX_INPUT_EXCLUDE, FILTER_SANITIZE_NUMBER_INT);
+    if (! $query_id_array) {
+        error_log("Couldn't determine the courses' IDs in getPLLOs.php");
+        echo "";
+        exit;        
+    }
+    
+    // Prepare the value and get the PLLOs
+    $pllos_array = $db_curriculum->getPLLOsForSeveralCourses($query_id_array, $exclude_id_array);
+}
 
 
 // Go through all the results and create the output with just the IDs

@@ -336,15 +336,15 @@ class Revision extends DatabaseObject {
                 $firstFallback = "PLLO (ID " . $this->primaryKey[
                         CMD::TABLE_PLLO_ID] . ")";
                 break;
-            case CMD::TABLE_CLLO_AND_COURSE:
+            case CMD::TABLE_CLLO_AND_COURSE_AND_LEVEL:
                 $firstElement = $db_curriculum->getCLLOFromID(
-                        $this->primaryKey[CMD::TABLE_CLLO_AND_COURSE_CLLO_ID]);
+                        $this->primaryKey[CMD::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID]);
                 $firstFallback = "CLLO (ID " . $this->primaryKey[
-                        CMD::TABLE_CLLO_AND_COURSE_CLLO_ID] . ")";
+                        CMD::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID] . ")";
                 $secondElement = $db_curriculum->getCourseFromID(
-                        $this->primaryKey[CMD::TABLE_CLLO_AND_COURSE_COURSE_ID]);
+                        $this->primaryKey[CMD::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID]);
                 $secondFallback = "Course (ID " . $this->primaryKey[
-                        CMD::TABLE_CLLO_AND_COURSE_COURSE_ID] . ")";
+                        CMD::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID] . ")";
                 break;
             case CMD::TABLE_CLLO_AND_PLLO:
                 $firstElement = $db_curriculum->getCLLOFromID(
@@ -428,6 +428,8 @@ class Revision extends DatabaseObject {
             case null:
             case "" :
                 return QSC_CMP_HTML_REVISION_NONE;
+            case CMD::TABLE_CLLO_AND_COURSE_AND_LEVEL . CMD::TABLE_CLLO_AND_COURSE_AND_LEVEL_LEVEL_ID :
+                return "Level";
             case CMD::TABLE_CLLO . CMD::TABLE_CLLO_IOA :
                 return "Indicator of Achievement";
             case CMD::TABLE_CLLO . CMD::TABLE_CLLO_PARENT_ID :

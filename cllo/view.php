@@ -56,12 +56,37 @@ else:
     ?>
 <h1>Error Finding Course Level Learning Outcome</h1>
     <?php qsc_core_log_and_display_error("A CLLO with that ID could not be retrieved from the database.");
-    else :
-        // Get the course associated with the CLLO
-        $course = $db_curriculum->getCourseForCLLO($cllo_id);
+    else :        
+        $page_title = $cllo->getName();
+        $heading_title = $page_title;
+        
+        // Get the courses and levels associated with the CLLO
+        $course_and_level_array = $db_curriculum->getCoursesAndCLLOLevelsForCLLO($cllo_id);
+        $course_and_level_array_count = count($course_and_level_array);
+    
+        $course_links_and_levels_array = null;
+        foreach ($course_and_level_array as $index => $course_and_level) {
+            $course = $course_and_level->getCourse();
+            $cllo_level = $course_and_level->getCLLOLevel();
+            
+            if ($index == 0) {
+                $heading_title .= " for ";
+                $heading_title .= $course->getAnchorToView($db_calendar);                 
+
+                $page_title .= " for ";
+                $page_title .= $course->getName($db_calendar);                 
+            }
+            if ($index == 1) {
+                $page_title .= " and ".(count($course_and_level_array) - 1)." More";
+                $heading_title .= " and ".(count($course_and_level_array) - 1)." More";
+            }
+            
+            $course_name_array[] = $course->getName();
+            $course_links_and_levels_array[] = $course->getAnchorToView($db_calendar)." (".$cllo_level->getName().")";
+        }        
 
         qsc_cmp_start_html(array(
-            QSC_CMP_START_HTML_TITLE => "View ".$cllo->getName()." for ".$course->getName(),
+            QSC_CMP_START_HTML_TITLE => "View $page_title",
             QSC_CMP_START_HTML_SCRIPTS => array(QSC_CMP_SCRIPT_CLLO_FORMS_LINK)));
         
         // Check to see if a form was submitted to add or edit a CLLO
@@ -95,10 +120,10 @@ else:
         );
         ?>
 
-<h1><?= $cllo->getName();?> for <?= $course->getAnchorToView(); ?></h1>
+<h1><?= $heading_title ?></h1>
 
         <?php qsc_cmp_display_property_columns(array(
-            "Course" => $course->getAnchorToView($db_calendar),
+            "Course(s) and Level(s)" => $course_links_and_levels_array,
             "Text" => $cllo->getText(),
             "Type" => $cllo->getType(),
             "Parent" => (($parent_cllo) ? $parent_cllo->getAnchorToView(true) : QSC_CMP_TEXT_NONE_SPECIFIED),

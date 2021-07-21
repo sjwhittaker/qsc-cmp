@@ -140,16 +140,26 @@ qsc_core_define_constant("QSC_CMP_FORM_CLLO_ID", "cllo-id");
 
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_COURSE_INPUT", "cllo-course-input");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_COURSE_INPUT_HELP", "cllo-course-input-help");
-qsc_core_define_constant("QSC_CMP_FORM_CLLO_COURSE_SELECT", "cllo-course-select");
-qsc_core_define_constant("QSC_CMP_FORM_CLLO_COURSE_SELECT_HELP", "cllo-course-select-help");
+
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_COURSE_LIST_POSSIBLE", "cllo-course-list-possible");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_COURSE_LIST_POSSIBLE_HELP", "cllo-course-list-possible-help");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_LEVEL_LIST_POSSIBLE", "cllo-level-list-possible");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_LEVEL_LIST_POSSIBLE_HELP", "cllo-level-list-possible-help");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_ADD", "cllo-course-and-level-add");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_REMOVE", "cllo-course-and-level-remove");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED", "cllo-course-list-selected");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED", "cllo-level-list-selected");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_LIST_SELECTED_HELP", "cllo-course-and-level-list-selected-help");
+
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST", "cllo-parent-course-list");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST_HELP", "cllo-parent-course-list-help");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST", "cllo-parent-course-cllo-list");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST_HELP", "cllo-parent-course-cllo-list-help");
+qsc_core_define_constant("QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_UNSELECT", "cllo-parent-course-cllo-unselect");
 
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_NUMBER", "cllo-number");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_NUMBER_HELP", "cllo-number-help");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_NUMBER_MAX_LENGTH", 15);
-
-qsc_core_define_constant("QSC_CMP_FORM_CLLO_PARENT_SELECT", "cllo-parent-select");
-qsc_core_define_constant("QSC_CMP_FORM_CLLO_PARENT_UNSELECT", "cllo-parent-unselect");
-qsc_core_define_constant("QSC_CMP_FORM_CLLO_PARENT_SELECT_HELP", "cllo-parent-select-help");
 
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_TEXT", "cllo-text");
 qsc_core_define_constant("QSC_CMP_FORM_CLLO_TEXT_HELP", "cllo-text-help");
@@ -308,6 +318,7 @@ qsc_core_define_constant("QSC_CMP_AJAX_ACTION_SEARCH_REVISIONS", "searchRevision
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_CLLO_FROM_ID", "getCLLOFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_CLLOS_FOR_COURSE", "getCLLOsForCourse");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_COURSE", "getPLLOsForCourse");
+qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_SEVERAL_COURSES", "getPLLOsForSeveralCourses");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_COURSE_FROM_ID", "getCourseFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_DEGREE_FROM_ID", "getDegreeFromID");
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_DEPARTMENT_FROM_ID", "getDepartmentFromID");
@@ -322,6 +333,7 @@ qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_PROGRAM_FROM_ID", "getProgramF
 qsc_core_define_constant("QSC_CMP_AJAX_ACTION_GET_REVISION_FROM_ID", "getRevisionFromID");
 
 qsc_core_define_constant("QSC_CMP_AJAX_INPUT_ID", "id");
+qsc_core_define_constant("QSC_CMP_AJAX_INPUT_ID_ARRAY", "id_array");
 qsc_core_define_constant("QSC_CMP_AJAX_INPUT_SEARCH", "search");
 qsc_core_define_constant("QSC_CMP_AJAX_INPUT_EXCLUDE", "exclude");
 
@@ -354,7 +366,7 @@ qsc_core_define_constant("QSC_CMP_COURSELIST_RELATIONSHIP_SEPARATOR_ANY", "; ");
 
 qsc_core_define_constant("QSC_CMP_COURSELIST_OPTION_COURSE_SEPARATOR", " ; ");
 
-qsc_core_define_constant("QSC_CMP_COURSELIST_SUBSETS_RECURSIVE_LIMIT", 1000);
+qsc_core_define_constant("QSC_CMP_COURSELIST_SUBSETS_RECURSIVE_LIMIT", 600);
 qsc_core_define_constant("QSC_CMP_COURSELIST_SUBSETS_DISPLAY_LIMIT", 50);
 qsc_core_define_constant("QSC_CMP_COURSELIST_SUBSETS_MAXIMUM_ADDITIONAL_UNITS", 3.0);
 
@@ -406,4 +418,6 @@ qsc_core_define_constant("QSC_CMP_PROGRAM_AND_PLAN_NAME_DELIMETER", "-");
 qsc_core_define_constant("QSC_CMP_PROGRAM_AND_PLAN_CODE_DELIMETER", "-");
 
 qsc_core_define_constant("QSC_CMP_PLLO_PREFIX_DELIMETER", "-");
+
+qsc_core_define_constant("QSC_CMP_REVISIONS_DEFAULT_LIMIT", 200);
 

@@ -141,36 +141,32 @@ else:
         <tr>
             <td><?= implode(', ', qsc_core_map_member_function($course_subset, 'getAnchorToView')); ?></td>
                 <?php foreach ($dle_array as $dle_index => $dle) : 
-                    $cllo_and_pllo_2D_array = array();
+                    $cllo_2D_array = array();
+                    $max_level = null;
+                    $max_rank = -1;
                 
-                    foreach ($course_subset as $course_index => $course) :
-                        $cllo_and_pllo_array = $db_curriculum->getCLLOsAndPLLOsForDLEAndCourse($dle->getDBID(), $course->getDBID());            
-                        if (! empty($cllo_and_pllo_array)) :
-                            $cllo_and_pllo_2D_array[$course_index] = $cllo_and_pllo_array;
-                        endif;
-                    endforeach;
-                ?>
+                    foreach ($course_subset as $course_index => $course) {
+                        $cllo_array = $db_curriculum->getCLLOsForDLEAndCourse($dle->getDBID(), $course->getDBID());            
+                        if (! empty($cllo_array)) {
+                            $cllo_2D_array[$course_index] = $cllo_array;
+                            $cllo_id_array = qsc_core_map_member_function($cllo_array, 'getDBID');
+                            
+                            $temp_max_level = $db_curriculum->getMaximumCLLOLevelForCourseAndCLLOs($course->getDBID(), $cllo_id_array);
+                            if ($temp_max_level->getRank() > $max_rank) {
+                                $max_level = $temp_max_level;
+                                $max_rank = $temp_max_level->getRank();
+                            }
+                        }                        
+                    } ?>
             <td class="result tooltip-container">
-                    <?php if (! empty($cllo_and_pllo_2D_array)) : 
+                    <?php if (! empty($cllo_2D_array)) : 
                         $dle_supported_array[$dle_index]++; ?>
-                <i class="fas fa-check" aria-hidden="true" title="Supported"></i>
-                <span class="sr-only">supported</span>
+                <span class="level-acronym" aria-hidden="true" title="<?= $max_level->getName() ?>"><?= $max_level->getAcronym() ?></span>                                    
                 <div class="tooltip-popup">
-                        <?php foreach ($cllo_and_pllo_2D_array as $course_index => $cllo_and_pllo_array) : ?>
-                    <a class="tooltip-popup-title" href="<?= $course_subset[$course_index]->getLinkToView(); ?>"><?= $course_subset[$course_index]->getName(); ?></a>
-                    <ul>
-                            <?php foreach ($cllo_and_pllo_array as $cllo_and_pllo) :
-                                $cllo = $db_curriculum->getCLLOFromID($cllo_and_pllo->getCLLODBID());                            
-                                $pllo = $db_curriculum->getPLLOFromID($cllo_and_pllo->getPLLODBID());
-                        ?>
-                        <li><?= $cllo->getAnchorToView(); ?>
-                            <i class="fas fa-arrow-right" aria-hidden="true" title="supports"></i>
-                            <span class="sr-only">supports</span>
-                            <?= $pllo->getAnchorToView(); ?>
-                        </li>
-                            <?php endforeach; ?>
-                    </ul>
-                        <?php endforeach; ?>
+                        <?php foreach ($cllo_2D_array as $course_index => $cllo_array) {
+                    echo "<br/>";
+                            qsc_cmp_display_course_cllo_level_pllo_table($db_curriculum, $course_subset[$course_index], $cllo_array); 
+                        } ?>                    
                 </div> <!-- .tooltip-popup -->
                     <?php endif; ?>
             </td>
@@ -196,8 +192,7 @@ else:
     </tfoot>
 </table>
 
-        <?php
-        endif;
+            <?php endif;
         endif;
     endif;
 endif;

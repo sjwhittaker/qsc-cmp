@@ -32,10 +32,21 @@ const QSC_CMP_FORM_CLLO_DELETE = "#form-cllo-delete";
 
 const QSC_CMP_FORM_CLLO_ID = "#cllo-id";
 const QSC_CMP_FORM_CLLO_COURSE_INPUT = "#cllo-course-input";
-const QSC_CMP_FORM_CLLO_COURSE_SELECT = "#cllo-course-select";
+const QSC_CMP_FORM_CLLO_COURSE_LIST_POSSIBLE = "#cllo-course-list-possible";
+const QSC_CMP_FORM_CLLO_LEVEL_LIST_POSSIBLE = "#cllo-level-list-possible";
+const QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_ADD = "#cllo-course-and-level-add";
+const QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_REMOVE = "#cllo-course-and-level-remove";
+const QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED = "#cllo-course-list-selected";
+const QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED = "#cllo-level-list-selected";
+
+const QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST = "#cllo-parent-course-list";
+const QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST_HELP = "#cllo-parent-course-list-help";
+const QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST = "#cllo-parent-course-cllo-list";
+const QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST_HELP = "#cllo-parent-course-cllo-list-help";
+const QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_UNSELECT = "#cllo-parent-course-cllo-unselect";
+
 const QSC_CMP_FORM_CLLO_NUMBER = "#cllo-number";
-const QSC_CMP_FORM_CLLO_PARENT_SELECT = "#cllo-parent-select";
-const QSC_CMP_FORM_CLLO_PARENT_UNSELECT = "#cllo-parent-unselect";
+
 const QSC_CMP_FORM_CLLO_TEXT = "#cllo-text";
 const QSC_CMP_FORM_CLLO_TYPE = "#cllo-type";
 const QSC_CMP_FORM_CLLO_IOA = "#cllo-ioa";
@@ -57,18 +68,33 @@ const QSC_CMP_FORM_CLLO_ILO_REMOVE = "#cllo-ilo-remove";
 /******************************************************************************
  * Functions
  *****************************************************************************/
-function qscCMPCLLOHandleCourseInput() {
-    // Get the current value that the user's entered in the input box
-    let currentCourseValue = $(this).val();
+function qscCMPGetSelectedCoursesIDArray() {
+    // Create an array of ID numbers from the current list of selected 
+    // courses to exclude them
+    let selectCoursesIDArray = [];
+    $(QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED + " option").each(function() {
+        selectCoursesIDArray.push(parseInt($(this).val()));
+    });
+    
+    return selectCoursesIDArray;
+}
 
+
+function qscCMPCLLOHandleCourseInput() {
+    // Get the current value that the user's entered in the input box and
+    // the set of currently selected courses
+    let currentCourseValue = $(this).val();    
+    let selectCoursesIDArray = qscCMPGetSelectedCoursesIDArray();
+    
     // Prep the AJAX data
     let ajaxData = {action: QSC_CMP_AJAX_ACTION_SEARCH_COURSES,
-        search: currentCourseValue
+        search: currentCourseValue,
+        exclude: selectCoursesIDArray
     };
 
     // Get the select box that goes with the input box and remove all
     // the current options
-    let courseSelect = $(QSC_CMP_FORM_CLLO_COURSE_SELECT);
+    let courseSelect = $(QSC_CMP_FORM_CLLO_COURSE_LIST_POSSIBLE);
     courseSelect.find("option").remove();
 
     qscCorePerformAJAXRequest(QSC_CMP_AJAX_SCRIPT_GET_COURSES, ajaxData,
@@ -78,33 +104,26 @@ function qscCMPCLLOHandleCourseInput() {
 
             // Did the update eliminate the previous selection? If so, remove
             // all options from the CLLO list except "None".
+            /*
             let selectedCourse = courseSelect.find("option:selected");
-            if (!selectedCourse.length) {
+            if (! selectedCourse.length) {
                 $(QSC_CMP_FORM_CLLO_PARENT_SELECT).find("option").remove();
             }
+            */
         }
     );    
 }
 
-function qscCMPCLLOHandleCourseSelection() {
-    // Get the current CLLO ID and the course selection box
+function qscCMPCLLOHandleCourseSelectionForParentCLLO() {
+    // Get the current CLLO ID
     let currentCLLOID = $(QSC_CMP_FORM_CLLO_ID).val();
-    let courseSelect = $(QSC_CMP_FORM_CLLO_COURSE_SELECT);
-
-    // Any change to the course selection means:
-    // 1) removing the prior parent CLLO options
-    // 2) removing the prior PLLO options
-    let parentCLLOSelect = $(QSC_CMP_FORM_CLLO_PARENT_SELECT);
+    
+    // Remove the current set of possible parent CLLOs
+    let parentCLLOSelect = $(QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST);
     parentCLLOSelect.find("option").remove();
 
-    let plloPossibleSelect = $(QSC_CMP_FORM_CLLO_PLLO_LIST_POSSIBLE);
-    let plloSupportedSelect = $(QSC_CMP_FORM_CLLO_PLLO_LIST_SUPPORTED);
-    plloPossibleSelect.find("option").remove();
-    plloSupportedSelect.find("option").remove();    
-
-    // Get the selected option from the list of courses and check that
-    // the change was to select, not unselect
-    let selectedCourse = courseSelect.find("option:selected");
+    // Get the currently selected parent course
+    let selectedCourse = $(QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST).find("option:selected");
     if (! selectedCourse.length) {
         return;
     }
@@ -119,19 +138,7 @@ function qscCMPCLLOHandleCourseSelection() {
             parentCLLOSelect.append(
                 qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name', currentCLLOID));
         }
-    );
-    
-    // Now prep the AJAX data and get the associated PLLOs
-    ajaxData = {action: QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_COURSE,
-        id: selectedCourse.val()
-    };    
-    qscCorePerformAJAXRequest(QSC_CMP_AJAX_SCRIPT_GET_PLLOS, ajaxData,
-        function (jsonData) {
-            // Create new options from the JSON data and put them in the select
-            plloPossibleSelect.append(
-                qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name', currentCLLOID));
-        }
-    );  
+    );    
 }
 
 function qscCMPCLLOHandlePLLOInput() {
@@ -164,6 +171,31 @@ function qscCMPCLLOHandlePLLOInput() {
     });
 }
 
+function qscCMPCLLOHandleCourseChangeForPLLOs () {
+    // Any change to the course selection means removing the prior PLLO options
+    let plloPossibleSelect = $(QSC_CMP_FORM_CLLO_PLLO_LIST_POSSIBLE);
+    let plloSupportedSelect = $(QSC_CMP_FORM_CLLO_PLLO_LIST_SUPPORTED);
+    plloPossibleSelect.find("option").remove();
+    plloSupportedSelect.find("option").remove();    
+
+    // Get the set of currently selected courses
+    let selectCoursesIDArray = qscCMPGetSelectedCoursesIDArray();
+        
+    // Prep the AJAX data and get the associated PLLOs
+    ajaxData = {action: QSC_CMP_AJAX_ACTION_GET_PLLOS_FOR_SEVERAL_COURSES,
+        id_array: selectCoursesIDArray,
+        exclude: []
+    };    
+    qscCorePerformAJAXRequest(QSC_CMP_AJAX_SCRIPT_GET_PLLOS, ajaxData,
+        function (jsonData) {
+            // Create new options from the JSON data and put them in the select
+            plloPossibleSelect.append(
+                qscCoreCreateOptionsFromJSONData(jsonData, 'id', 'name'));
+        }
+    );  
+    
+}
+
 
 /******************************************************************************
  * Document - Ready
@@ -171,11 +203,74 @@ function qscCMPCLLOHandlePLLOInput() {
 $(document).ready(function() {
     // Handle the user editing the selected course
     $(QSC_CMP_FORM_CLLO_COURSE_INPUT).keyup(qscCMPCLLOHandleCourseInput);
+            
+    // Handle the user selecting the '>>' and '<<' buttons to move courses
+    // back and forth and handle the associated levels        
+    $(QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_ADD).click(function() {
+        let selectedCourseOption = $(QSC_CMP_FORM_CLLO_COURSE_LIST_POSSIBLE + ' option:selected');
+        let selectedLevelOption = $(QSC_CMP_FORM_CLLO_LEVEL_LIST_POSSIBLE + ' option:selected');
+        let clonedSelectedLevelOption = null;
+        let clonedSelectedCourseOption = null;
+
+        if (selectedCourseOption.length && selectedLevelOption.length) {
+            selectedCourseOption.appendTo(QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED);
+            
+            // Add the course to the 'course and level' list
+            clonedSelectedLevelOption = selectedLevelOption.clone();
+            clonedSelectedLevelOption.appendTo(QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED);
+            clonedSelectedLevelOption.prop("selected", true);
+            
+            // Add the course to the 'Parent CLLO course' list
+            clonedSelectedCourseOption = selectedCourseOption.clone();
+            clonedSelectedCourseOption.appendTo(QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST);            
+        }
+        
+        qscCMPCLLOHandleCourseChangeForPLLOs();        
+    });    
+    $(QSC_CMP_FORM_CLLO_COURSE_AND_LEVEL_REMOVE).click(function() {        
+        let selectedCourseIndex = $(QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED).prop('selectedIndex');
+
+        qscCoreTransferOption(QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED, 
+            QSC_CMP_FORM_CLLO_COURSE_LIST_POSSIBLE);
+
+        if (selectedCourseIndex !== -1) {
+            // Check whether the removed course was currently selected for 
+            // the parent CLLO
+            let clloParentSelectedCourseIndex = $(QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST).prop('selectedIndex');
+            if (clloParentSelectedCourseIndex === selectedCourseIndex) {
+                $(QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST).find("option").remove();
+            }
+            
+            $(QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST).find("option").eq(selectedCourseIndex).remove();
+        }
+                
+        $(QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED + ' option:selected').remove();
+        
+        qscCMPCLLOHandleCourseChangeForPLLOs();        
+    });        
     
-    // Handle the user changing the selected course, which must change
-    // the possible parent CLLO options
-    $(QSC_CMP_FORM_CLLO_COURSE_SELECT).change(qscCMPCLLOHandleCourseSelection);
+    // Coordinate the selection of a course/level with the corresponding level/course
+    $(QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED).click(function(event) {
+        qscCoreCoordinateSelectedItem(event, 
+            QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED, 
+            QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED);
+    });
+    $(QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED).click(function(event) {
+        qscCoreCoordinateSelectedItem(event, 
+            QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED, 
+            QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED);
+    });    
     
+    // Handle the user changing the selected course(s) for the parent CLLO, which 
+    // must change the possible parent CLLO options
+    $(QSC_CMP_FORM_CLLO_PARENT_COURSE_LIST).change(qscCMPCLLOHandleCourseSelectionForParentCLLO);
+    
+    // Handle the user 'unselecting' the parent CLLO because Ctrl + click
+    // doesn't unselect an option in a single select box
+    $(QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_UNSELECT).click(function() {
+        $(QSC_CMP_FORM_CLLO_PARENT_COURSE_CLLO_LIST + ' option:selected').prop("selected", false);    
+    });
+                
     // Handle the user entering text to filter the PLLO options
     $(QSC_CMP_FORM_CLLO_PLLO_INPUT).keyup(qscCMPCLLOHandlePLLOInput);
     
@@ -194,13 +289,18 @@ $(document).ready(function() {
         QSC_CMP_FORM_CLLO_ILO_LIST_SUPPORTED, 
         QSC_CMP_FORM_CLLO_ILO_LIST_POSSIBLE);
     
-    // Handle the user 'unselecting' the parent CLLO because Ctrl + click
-    // doesn't unselect an option in a single select box
-    qscCoreUnselectWithButton(QSC_CMP_FORM_CLLO_PARENT_UNSELECT,
-        QSC_CMP_FORM_CLLO_PARENT_SELECT);
-    
     // Handle form submission for add and edit
     $(QSC_CMP_FORM_CLLO_ADD + ', ' + QSC_CMP_FORM_CLLO_EDIT).submit(function(event) {
+        // Make sure there's at least one course-level option selected.
+        if ($(QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED + " option").length == 0) {
+            event.preventDefault();
+        }
+        
+        // Select all of the options in the selected Course and Level lists
+        // so they appear in $_POST
+        qscCoreSelectAllOptions(QSC_CMP_FORM_CLLO_COURSE_LIST_SELECTED);
+        qscCoreSelectAllOptions(QSC_CMP_FORM_CLLO_LEVEL_LIST_SELECTED);
+        // 
         // Select all of the options in the supported PLLOs and ILOs lists
         // so they appear in $_POST
         qscCoreSelectAllOptions(QSC_CMP_FORM_CLLO_PLLO_LIST_SUPPORTED);

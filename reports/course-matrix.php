@@ -107,30 +107,20 @@ $dles_array = $db_curriculum->getAllDLEs();
             <tr>
                 <td><?= $course->getAnchorToView($db_calendar); ?></td>
         <?php foreach ($dles_array as $dle) : 
-            $cllos_and_pllos_array = $db_curriculum->getCLLOsAndPLLOsForDLEAndCourse($dle->getDBID(), $course->getDBID());            
+            $cllo_array = $db_curriculum->getCLLOsForDLEAndCourse($dle->getDBID(), $course->getDBID());
+            $cllo_id_array = qsc_core_map_member_function($cllo_array, 'getDBID');
+            
+            $max_level = ($cllo_array) ? 
+                $db_curriculum->getMaximumCLLOLevelForCourseAndCLLOs($course->getDBID(), $cllo_id_array) :
+                "";        
             ?>
                 <td class="result tooltip-container">
-                    <?php if (! empty($cllos_and_pllos_array)) : ?>
-                    <i class="fas fa-check" aria-hidden="true" title="Supported"></i>
-                        <span class="sr-only">supported</span>
+                    <?php if (! empty($cllo_array)) : ?>
+                    <span class="level-acronym" aria-hidden="true" title="<?= $max_level->getName() ?>"><?= $max_level->getAcronym() ?></span>
                     <div class="tooltip-popup">
-                        <a class="tooltip-popup-title" href="<?= $course->getLinkToView(); ?>"><?= $course->getName(); ?></a>
-                        <ul>
-                        <?php foreach ($cllos_and_pllos_array as $cllo_and_pllo) :                            
-                            $cllo = $db_curriculum->getCLLOFromID($cllo_and_pllo->getCLLODBID());                            
-                            $pllo = $db_curriculum->getPLLOFromID($cllo_and_pllo->getPLLODBID());
-                        ?>
-                            <li>
-                                <?= $cllo->getAnchorToView(); ?>
-                                <i class="fas fa-arrow-right" aria-hidden="true" title="supports"></i>
-                                    <span class="sr-only">supports</span>
-                                <?= $pllo->getAnchorToView(); ?>
-                            </li>
-                        
-                        <?php endforeach; ?>
-                        </ul>
-                    </div>
+                    <?php qsc_cmp_display_course_cllo_level_pllo_table($db_curriculum, $course, $cllo_array); ?>
                     <?php endif; ?>
+                    </div>
                 </td>
         <?php endforeach; ?>
             </tr>
