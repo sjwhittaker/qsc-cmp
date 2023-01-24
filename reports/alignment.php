@@ -105,8 +105,8 @@ $dles_array = $db_curriculum->getAllDLEs();
                 $grandchild_pllo_array = $db_curriculum->getChildPLLOs($pllo->getDBID());
                 foreach ($grandchild_pllo_array as $grandchild_pllo) :
                     $cllo_array = ($department) ?
-                        $db_curriculum->getDirectCLLOsForPLLO($grandchild_pllo->getDBID()) :
-                        $db_curriculum->getDirectCLLOsForPLLOAndSubject($grandchild_pllo->getDBID(), $subject);
+                        $db_curriculum->getDirectCLLOsForPLLO($grandchild_pllo->getDBID(), false) :
+                        $db_curriculum->getDirectCLLOsForPLLOAndSubject($grandchild_pllo->getDBID(), $subject, false);
                     ?>                
             <div class="grandchild-pllo">            
                 <div class="grandchild-pllo-header">           

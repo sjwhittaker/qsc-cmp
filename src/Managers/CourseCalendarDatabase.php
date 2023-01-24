@@ -48,7 +48,7 @@ class CourseCalendarDatabase extends DatabaseManager {
     public const TABLE_COURSES_COREQ = "coreq"; 
     public const TABLE_COURSES_NOTE = "note"; 
     public const TABLE_COURSES_EXCLUSION = "exclusion"; 
-    public const TABLE_COURSES_RECOMMENDED = "recommended"; 
+    public const TABLE_COURSES_RECOMMENDED = "reccomend"; 
     public const TABLE_COURSES_ONEWAY = "oneWay"; 
     public const TABLE_COURSES_LEARNING_HOURS = "learnHours"; 
     public const TABLE_COURSES_EQUIVALENCY = "equivalency"; 

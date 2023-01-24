@@ -2562,7 +2562,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @param $plloIDValue     The id of the PLLO (string or numeric)
      * @return                 An array of all the CLLOs supporting the PLLO
      */
-    public function getDirectCLLOsForPLLO($plloIDValue) {
+    public function getDirectCLLOsForPLLO($plloIDValue, $useDistinct = true) {
         $course = self::TABLE_COURSE;
         $courseID = self::TABLE_COURSE_ID;
         $courseSubject = self::TABLE_COURSE_SUBJECT;
@@ -2580,7 +2580,11 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cacCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
         $cacCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
 
-        $query = "SELECT DISTINCT * FROM (SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cap WHERE $cap.$capPLLOID = ?) AS $cap ON $cllo.$clloID = $cap.$capCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC) AS $cllo";
+        //$query = "SELECT DISTINCT * FROM (SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cap WHERE $cap.$capPLLOID = ?) AS $cap ON $cllo.$clloID = $cap.$capCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC) AS $cllo";
+        $query = "(SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cap WHERE $cap.$capPLLOID = ?) AS $cap ON $cllo.$clloID = $cap.$capCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC)";
+        if ($useDistinct) {
+            $query = "SELECT DISTINCT * FROM $query AS $cllo";
+        }
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($plloIDValue)),
             'CourseLevelLearningOutcome');
@@ -2598,7 +2602,11 @@ class CurriculumMappingDatabase extends DatabaseManager {
      * @param type $subjectValue
      * @return                 An array of all the CLLOs supporting the PLLO
      */
-    public function getDirectCLLOsForPLLOAndSubject($plloIDValue, $subjectValue) {
+    public function getDirectCLLOsForPLLOAndSubject($plloIDValue, $subjectValue, $useDistinct = true) {
+        if ($subjectValue == null) {
+            return $this->getDirectCLLOsForPLLO($plloIDValue, $useDistinct);
+        }
+
         $course = self::TABLE_COURSE;
         $courseID = self::TABLE_COURSE_ID;
         $courseSubject = self::TABLE_COURSE_SUBJECT;
@@ -2616,7 +2624,7 @@ class CurriculumMappingDatabase extends DatabaseManager {
         $cacCLLOID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_CLLO_ID;
         $cacCourseID = self::TABLE_CLLO_AND_COURSE_AND_LEVEL_COURSE_ID;
 
-        $query = "SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cap WHERE $cap.$capPLLOID = ?) AS $cap ON $cllo.$clloID = $cap.$capCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN (SELECT * FROM $course WHERE $course.$courseSubject = ?) AS $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject, $course.$courseNumber, $cllo.$clloNumber ASC";
+        $query = "SELECT $cllo.* FROM $cllo JOIN (SELECT * FROM $cap WHERE $cap.$capPLLOID = ?) AS $cap ON $cllo.$clloID = $cap.$capCLLOID JOIN $cac ON $cllo.$clloID = $cac.$cacCLLOID JOIN (SELECT * FROM $course WHERE $course.$courseSubject = ?) AS $course ON $course.$courseID = $cac.$cacCourseID ORDER BY $course.$courseSubject ASC, $course.$courseNumber ASC, $cllo.$clloNumber ASC";
         return $this->createObjectsFromDatabaseRows(
             $this->getQueryResults($query, array($plloIDValue, $subjectValue)),
             'CourseLevelLearningOutcome');

@@ -844,15 +844,15 @@ function qsc_cmp_display_ilo_table($ilo_array) {
 function qsc_cmp_display_cllo_table($cllo_array, $db_curriculum = null, $db_calendar = null, $single_course = null, $display_pllos = false, $indent_children = false) {
     if (empty($cllo_array)) {
         return;
-    }    
+    }
 ?>
     <table>
         <thead>
             <tr>
-                <th>Number</th>
                 <?php if (! $single_course) : ?>
                 <th>Courses</th>
                 <?php endif; ?>
+                <th>Number</th>
                 <th>Level</th>
                 <th>Type</th>
                 <?php if ($display_pllos) : ?><th>PLLOs</th><?php endif; ?>
@@ -866,11 +866,12 @@ function qsc_cmp_display_cllo_table($cllo_array, $db_curriculum = null, $db_cale
         $cllo_pllo_array = array();
         
         $cllo_level = null;
+
         
         // Determine how to set up the rows
         if ($single_course) {
             $course_to_use = $single_course;
-            $cllo_level = $db_curriculum->getLevelForCLLOAndCourse($cllo->getDBID(), $single_course->getDBID());         
+            $cllo_level = $db_curriculum->getLevelForCLLOAndCourse($cllo->getDBID(), $single_course->getDBID());
         }
         else {
             $course_and_level_array = $db_curriculum->getCoursesAndCLLOLevelsForCLLO($cllo->getDBID());
@@ -885,7 +886,7 @@ function qsc_cmp_display_cllo_table($cllo_array, $db_curriculum = null, $db_cale
             }
         
         }
-                        
+
         
         $indent_this_row = $indent_children && $cllo->hasParent();
         $number_class = ($indent_this_row) ? ' class="child-cllo"' : '';
@@ -893,12 +894,12 @@ function qsc_cmp_display_cllo_table($cllo_array, $db_curriculum = null, $db_cale
         // Print out the first row for the CLLO
         ?>
             <tr>
-                <td<?= $number_class ?> rowspan="<?= $course_and_level_array_span ?>"><?= $cllo->getAnchorToView(); ?></td>
                 <?php if (! $single_course) : ?>
                 <td>
                     <?= ($course_to_use) ? $course_to_use->getAnchorToView($db_calendar) : QSC_CMP_TEXT_NONE_SPECIFIED ?>
                 </td>
                 <?php endif; ?>
+                <td<?= $number_class ?> rowspan="<?= $course_and_level_array_span ?>"><?= $cllo->getAnchorToView(); ?></td>
                 <td><?= ($cllo_level) ? $cllo_level->getName() : '' ?></td>
                 <td rowspan="<?= $course_and_level_array_span ?>"><?= $cllo->getType(); ?></td>
         <?php if ($display_pllos ) : 
